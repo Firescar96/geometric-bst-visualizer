@@ -16,7 +16,6 @@ class Node {
 
   //inserts a key and rebalances
   insert (key) {
-    console.log('insert', key, this);
     if(key < this.key) {
       this.numLeftChildren++;
       if(this.left === null) {
@@ -42,7 +41,6 @@ class Node {
   //this is done a little strangely so that the pointer to the root node never
   //changes, instead the children are moved and keys are switched
   rebalance () {
-    console.log('rebalancing', this);
     var leftNode = this.left;
     var rightNode = this.right;
 
@@ -60,8 +58,7 @@ class Node {
         leftNode.rotateLeft();
         this.rotateRight();
       }
-    }
-    else if((this.numRightChildren > 1 && this.numLeftChildren == 0) ||
+    }else if((this.numRightChildren > 1 && this.numLeftChildren == 0) ||
       (this.numLeftChildren > 0 && this.numRightChildren > 0 && rightNode.height > leftNode.height + 1)
     ) {
       if((rightNode.numRightChildren > 0 && rightNode.numLeftChildren == 0) ||
@@ -75,27 +72,11 @@ class Node {
         this.rotateLeft();
       }
     }
-    //
-    // this.updateDepth();
-    // this.updateHeight();
   }
 
-  // updateDepth () {
-  //   if(this.parent !== undefined)this.depth = this.parent.depth + 1;
-  //   if(this.numLeftChildren > 0)this.left.updateDepth();
-  //   if(this.numRightChildren > 0)this.right.updateDepth();
-  // }
-  //
-  // updateHeight () {
-  //   if(this.parent === undefined)this.height = treeHeight;
-  //   else this.height = this.parent.height - 1;
-  //   if(this.numLeftChildren > 0)this.left.updateHeight();
-  //   if(this.numRightChildren > 0)this.right.updateHeight();
-  // }
 
   //move counterclockwise
   rotateLeft () {
-    console.log('rotate left', this);
     var leftNode = this.left;
     var rightNode = this.right;
 
@@ -125,7 +106,6 @@ class Node {
 
   //move clockwise
   rotateRight () {
-    console.log('rotate right', this);
     var leftNode = this.left;
     var rightNode = this.right;
 

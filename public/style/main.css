@@ -7,6 +7,10 @@ html, body {
 main, #root {
   width: 100%;
   height: 100%; }
-  main #graphs, #root #graphs {
-    width: 100%;
+  main > div, #root > div {
+    width: 50%;
+    height: 100%;
+    display: inline-block; }
+  main .graphs, #root .graphs {
+    width: 50%;
     height: 100%; }

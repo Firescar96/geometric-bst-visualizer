@@ -10,8 +10,14 @@ main, #root {
   width: 100%;
   height: 100%;
 
-  #graphs {
-    width: 100%;
+  >div {
+    width: 50%;
+    height: 100%;
+    display: inline-block;
+  }
+
+  .graphs {
+    width: 50%;
     height: 100%;
   }
 }
