@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import Node from './StandardBSTNode';
+import {store} from './main.js';
 const NODE_RADIUS = 10;
 const ADD_ROOT = 'ADD ROOT';
 
@@ -12,16 +13,24 @@ function standardBSTReducer (state, action) {
   if(state === undefined) {
     return {
       root: null,
+      numElements: 0,
     };
   }
 
   switch (action.type) {
     case ADD_ROOT:
       if(state.root === null) {
-        return {root: new Node(action.newElement)};
+        return {
+          root: new Node(action.newElement),
+          numElements: ++state.numElements,
+          newElement: action.newElement,
+        };
       }
       state.root.insert(action.newElement);
-      return state;
+      return Object.assign({}, state, {
+        numElements: ++state.numElements,
+        newElement: action.newElement,
+      });
     default:
       return state;
   }
@@ -44,7 +53,7 @@ class StandardBSTGraph extends React.Component {
     let newElement = this.state.newElement;
 
     event.preventDefault();
-    this.props.dispatch(addRoot(newElement));
+    store.dispatch(addRoot(newElement));
     this.setState({newElement: ''}, () => {
       this.update();
     });
@@ -100,7 +109,6 @@ class StandardBSTGraph extends React.Component {
           .text((d) => d.key);
 
         standard.selectAll('line.link').transition()
-          //.ease('linear')
           .duration(100)
           .ease(v => d3.easeSinIn(v))
           .attr('x1', d => d.source.x + NODE_RADIUS * 2)

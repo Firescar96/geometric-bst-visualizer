@@ -7483,6 +7483,8 @@ var _StandardBSTNode = __webpack_require__(122);
 
 var _StandardBSTNode2 = _interopRequireDefault(_StandardBSTNode);
 
+var _main = __webpack_require__(123);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -7503,17 +7505,25 @@ function addRoot(newElement) {
 function standardBSTReducer(state, action) {
   if (state === undefined) {
     return {
-      root: null
+      root: null,
+      numElements: 0
     };
   }
 
   switch (action.type) {
     case ADD_ROOT:
       if (state.root === null) {
-        return { root: new _StandardBSTNode2.default(action.newElement) };
+        return {
+          root: new _StandardBSTNode2.default(action.newElement),
+          numElements: ++state.numElements,
+          newElement: action.newElement
+        };
       }
       state.root.insert(action.newElement);
-      return state;
+      return Object.assign({}, state, {
+        numElements: ++state.numElements,
+        newElement: action.newElement
+      });
     default:
       return state;
   }
@@ -7549,7 +7559,7 @@ var StandardBSTGraph = function (_React$Component) {
       var newElement = this.state.newElement;
 
       event.preventDefault();
-      this.props.dispatch(addRoot(newElement));
+      _main.store.dispatch(addRoot(newElement));
       this.setState({ newElement: '' }, function () {
         _this2.update();
       });
@@ -7613,9 +7623,7 @@ var StandardBSTGraph = function (_React$Component) {
           return d.key;
         });
 
-        standard.selectAll('line.link').transition()
-        //.ease('linear')
-        .duration(100).ease(function (v) {
+        standard.selectAll('line.link').transition().duration(100).ease(function (v) {
           return d3.easeSinIn(v);
         }).attr('x1', function (d) {
           return d.source.x + NODE_RADIUS * 2;
@@ -12913,6 +12921,8 @@ var _GeometricBSTPoint = __webpack_require__(121);
 
 var _GeometricBSTPoint2 = _interopRequireDefault(_GeometricBSTPoint);
 
+var _main = __webpack_require__(123);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -12939,6 +12949,25 @@ var GeometricBSTGraph = function (_React$Component) {
   }
 
   _createClass(GeometricBSTGraph, [{
+    key: 'standardBSTUpdate',
+    value: function standardBSTUpdate(test) {
+      var state = _main.store.getState();
+      this.addPoint(state.newElement);
+    }
+  }, {
+    key: 'addPoint',
+    value: function addPoint(_newElement) {
+      var _this2 = this;
+
+      var newElement = new _GeometricBSTPoint2.default(_newElement, this.state.points.length + 1);
+      this.setState({
+        newElement: '',
+        points: this.state.points.concat(newElement)
+      }, function () {
+        _this2.update();
+      });
+    }
+  }, {
     key: 'changeElement',
     value: function changeElement(event) {
       this.setState({ newElement: event.target.value });
@@ -12946,16 +12975,8 @@ var GeometricBSTGraph = function (_React$Component) {
   }, {
     key: 'insertElement',
     value: function insertElement(event) {
-      var _this2 = this;
-
       event.preventDefault();
-      var newElement = new _GeometricBSTPoint2.default(this.state.newElement, this.state.points.length + 1);
-      this.setState({
-        newElement: '',
-        points: this.state.points.concat(newElement)
-      }, function () {
-        _this2.update();
-      });
+      this.addPoint(this.state.newElement);
     }
   }, {
     key: 'render',
@@ -13028,6 +13049,7 @@ var GeometricBSTGraph = function (_React$Component) {
   }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
+      _main.store.subscribe(this.standardBSTUpdate.bind(this));
       var geometric = d3.select('#geometric');
       var width = geometric.node().getBoundingClientRect().width;
       var widthMargin = width / 10;
@@ -13043,7 +13065,13 @@ var GeometricBSTGraph = function (_React$Component) {
   return GeometricBSTGraph;
 }(_react2.default.Component);
 
-exports.default = GeometricBSTGraph;
+exports.default = (0, _reactRedux.connect)(function (state, ownProps) {
+  return {
+    root: state.root,
+    numElements: state.numElements,
+    newElement: null
+  };
+})(GeometricBSTGraph);
 
 /***/ }),
 /* 121 */
@@ -13061,6 +13089,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var Point = function Point(value, time) {
   _classCallCheck(this, Point);
 
+  this.baseValue = value;
   this.value = isNaN(value) ? parseInt(value.split('').map(function (x) {
     return x.charCodeAt(0);
   }).reduce(function (x, y) {
@@ -13264,6 +13293,11 @@ exports.default = Node;
 "use strict";
 
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.store = undefined;
+
 var _Home = __webpack_require__(117);
 
 var _Home2 = _interopRequireDefault(_Home);
@@ -13285,6 +13319,7 @@ var _StandardBSTGraph = __webpack_require__(66);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var store = (0, _redux.createStore)(_StandardBSTGraph.standardBSTReducer);
+exports.store = store; //exported here so it's available in all the subcompnents
 
 (0, _reactDom.render)(_react2.default.createElement(
   _reactRedux.Provider,

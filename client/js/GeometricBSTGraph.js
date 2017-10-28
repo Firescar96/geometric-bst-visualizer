@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import Point from './GeometricBSTPoint';
+import {store} from './main.js';
 
 class GeometricBSTGraph extends React.Component {
   constructor () {
@@ -12,18 +13,25 @@ class GeometricBSTGraph extends React.Component {
     this.insertElement = this.insertElement.bind(this);
     this.changeElement = this.changeElement.bind(this);
   }
-  changeElement (event) {
-    this.setState({newElement: event.target.value});
+  standardBSTUpdate (test) {
+    let state = store.getState();
+    this.addPoint(state.newElement);
   }
-  insertElement (event) {
-    event.preventDefault();
-    let newElement = new Point(this.state.newElement, this.state.points.length + 1);
+  addPoint (_newElement) {
+    let newElement = new Point(_newElement, this.state.points.length + 1);
     this.setState({
       newElement: '',
       points: this.state.points.concat(newElement),
     }, () => {
       this.update();
     });
+  }
+  changeElement (event) {
+    this.setState({newElement: event.target.value});
+  }
+  insertElement (event) {
+    event.preventDefault();
+    this.addPoint(this.state.newElement);
   }
 
   render () {
@@ -84,6 +92,7 @@ class GeometricBSTGraph extends React.Component {
   }
 
   componentDidMount () {
+    store.subscribe(this.standardBSTUpdate.bind(this));
     let geometric = d3.select('#geometric');
     let width = geometric.node().getBoundingClientRect().width;
     let widthMargin = width / 10;
@@ -102,4 +111,10 @@ class GeometricBSTGraph extends React.Component {
   }
 }
 
-export default GeometricBSTGraph;
+export default connect(function (state, ownProps) {
+  return {
+    root: state.root,
+    numElements: state.numElements,
+    newElement: null,
+  };
+})(GeometricBSTGraph);

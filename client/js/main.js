@@ -5,9 +5,9 @@ import { BrowserRouter, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
 import { standardBSTReducer } from './StandardBSTGraph';
-import { combineReducers } from 'redux';
 
 let store = createStore(standardBSTReducer);
+export {store}; //exported here so it's available in all the subcompnents
 
 render((
   <Provider store={store}>
