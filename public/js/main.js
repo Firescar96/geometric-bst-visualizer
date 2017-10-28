@@ -7572,14 +7572,10 @@ var StandardBSTGraph = function (_React$Component) {
           )
         ),
         _react2.default.createElement(
-          'div',
-          { className: 'graphs' },
-          _react2.default.createElement(
-            'svg',
-            { id: 'standard', width: '100%', height: '100%' },
-            _react2.default.createElement('g', { id: 'links' }),
-            _react2.default.createElement('g', { id: 'nodes' })
-          )
+          'svg',
+          { id: 'standard', className: 'graph' },
+          _react2.default.createElement('g', { id: 'links' }),
+          _react2.default.createElement('g', { id: 'nodes' })
         )
       );
     }
@@ -12952,9 +12948,8 @@ var GeometricBSTGraph = function (_React$Component) {
     value: function insertElement(event) {
       var _this2 = this;
 
-      var newElement = this.state.newElement;
-
       event.preventDefault();
+      var newElement = new _GeometricBSTPoint2.default(this.state.newElement, this.state.points.length + 1);
       this.setState({
         newElement: '',
         points: this.state.points.concat(newElement)
@@ -12979,17 +12974,69 @@ var GeometricBSTGraph = function (_React$Component) {
             'Insert'
           )
         ),
-        _react2.default.createElement('svg', { id: 'geometric', width: '100%', height: '100%' })
+        _react2.default.createElement('svg', { id: 'geometric', className: 'graph' })
       );
     }
   }, {
     key: 'update',
     value: function update() {
+      console.log(this.state.points);
       var geometric = d3.select('#geometric');
+      var width = geometric.node().getBoundingClientRect().width;
+      var widthMargin = width / 10;
+      var height = geometric.node().getBoundingClientRect().height;
+      var heightMargin = width / 2;
+      console.log('translate(0,' + (height - heightMargin) + ')');
+
+      console.log(height);
+      var xRange = d3.scaleLinear().range([widthMargin, width - widthMargin]).domain([d3.min(this.state.points, function (d) {
+        return d.value;
+      }) - 1, d3.max(this.state.points, function (d) {
+        return d.value;
+      }) + 1]);
+
+      var yRange = d3.scaleLinear().range([heightMargin, height - heightMargin]).domain([d3.max(this.state.points, function (d) {
+        return d.time;
+      }) + 1, d3.min(this.state.points, function (d) {
+        return d.time;
+      }) - 1]);
+
+      var xAxis = d3.axisBottom(xRange).ticks(this.state.points.length);
+      var yAxis = d3.axisLeft(yRange);
+
+      //geometric.remove('g.xAxis');
+      geometric.selectAll('g.xAxis').call(xAxis);
+
+      //geometric.remove('g.yAxis');
+      geometric.selectAll('g.yAxis').call(yAxis);
 
       var point = geometric.selectAll('circle.point').data(this.state.points);
-      point.enter().append('circle').attr('class', 'point').attr('stroke', 'white').attr('cx', '50%').attr('cy', '50%').attr('r', 5);
+      point.enter().append('circle').attr('class', 'point').attr('stroke', 'white').attr('cx', function (d) {
+        return xRange(d.value);
+      }).attr('cy', function (d) {
+        return yRange(d.time);
+      }).attr('r', 5);
       point.exit().remove();
+      point.transition().duration(200).ease(function (v) {
+        return d3.easeSinIn(v);
+      }).attr('cx', function (d) {
+        return xRange(d.value);
+      }).attr('cy', function (d) {
+        return yRange(d.time);
+      });
+    }
+  }, {
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      var geometric = d3.select('#geometric');
+      var width = geometric.node().getBoundingClientRect().width;
+      var widthMargin = width / 10;
+      var height = geometric.node().getBoundingClientRect().height;
+      var heightMargin = width / 2;
+
+      geometric.append('g').attr('class', 'xAxis').attr('stroke', 'white').attr('transform', 'translate(0,' + (height - heightMargin) + ')');
+
+      geometric.append('g').attr('class', 'yAxis').attr('stroke', 'white').attr('transform', 'translate(' + widthMargin + ',0)');
     }
   }]);
 
@@ -13011,8 +13058,15 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Point = function Point() {
+var Point = function Point(value, time) {
   _classCallCheck(this, Point);
+
+  this.value = isNaN(value) ? parseInt(value.split('').map(function (x) {
+    return x.charCodeAt(0);
+  }).reduce(function (x, y) {
+    return x + y;
+  }, '')) : parseFloat(value);
+  this.time = time;
 };
 
 exports.default = Point;

@@ -58,12 +58,10 @@ class StandardBSTGraph extends React.Component {
           <input value={this.state.newElement} onChange={this.changeElement}></input>
           <button type="submit">Insert</button>
         </form>
-        <div className="graphs">
-          <svg id="standard" width="100%" height="100%">
-            <g id="links"></g>
-            <g id="nodes"></g>
-          </svg>
-        </div>
+        <svg id="standard" className="graph">
+          <g id="links"></g>
+          <g id="nodes"></g>
+        </svg>
       </div>
     );
   }
