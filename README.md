@@ -1,2 +1,4 @@
-# react-boilerplate
-this is free software, use as you wish
+#geometric-bst-visualizer
+this is a basic nodejs/react/webpack project
+
+run `npm install` `webpack` and then `node app.js` to run it.
