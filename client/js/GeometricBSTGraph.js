@@ -53,7 +53,7 @@ class GeometricBSTGraph extends React.Component {
     let width = geometric.node().getBoundingClientRect().width;
     let widthMargin = width / 10;
     let height = geometric.node().getBoundingClientRect().height;
-    let heightMargin = width / 2;
+    let heightMargin = height / 3;
     console.log('translate(0,' + (height - heightMargin) + ')');
 
     console.log(height);
@@ -97,7 +97,7 @@ class GeometricBSTGraph extends React.Component {
     let width = geometric.node().getBoundingClientRect().width;
     let widthMargin = width / 10;
     let height = geometric.node().getBoundingClientRect().height;
-    let heightMargin = width / 2;
+    let heightMargin = height / 3;
 
     geometric.append('g')
       .attr('class', 'xAxis')
