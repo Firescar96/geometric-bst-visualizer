@@ -1,27 +1,28 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import Point from './GeometricBSTPoint';
+import BST from './GeometricBST';
 import {store} from './main.js';
 
 class GeometricBSTGraph extends React.Component {
   constructor () {
     super();
     this.state = {
-      points: [],
+      bst: new BST(),
       newElement: '',
     };
+    window.bst = this.state.bst;
     this.insertElement = this.insertElement.bind(this);
     this.changeElement = this.changeElement.bind(this);
+    this.runGreedyAlgorithm = this.runGreedyAlgorithm.bind(this);
   }
   standardBSTUpdate (test) {
     let state = store.getState();
     this.addPoint(state.newElement);
   }
   addPoint (_newElement) {
-    let newElement = new Point(_newElement, this.state.points.length + 1);
+    this.state.bst.insert(_newElement);
     this.setState({
       newElement: '',
-      points: this.state.points.concat(newElement),
     }, () => {
       this.update();
     });
@@ -33,7 +34,10 @@ class GeometricBSTGraph extends React.Component {
     event.preventDefault();
     this.addPoint(this.state.newElement);
   }
-
+  runGreedyAlgorithm () {
+    this.state.bst.runGreedyAlgorithm();
+    this.update();
+  }
   render () {
     return (
       <div>
@@ -42,13 +46,16 @@ class GeometricBSTGraph extends React.Component {
           <input value={this.state.newElement} onChange={this.changeElement}></input>
           <button type="submit">Insert</button>
         </form>
+        <button type="button" onClick={this.runGreedyAlgorithm}>Run Greedy Algorithm</button>
         <svg id="geometric" className="graph"></svg>
       </div>
     );
   }
 
   update () {
-    console.log(this.state.points);
+    let points = this.state.bst.points;
+    let nnSatisfierPoints = this.state.bst.points.filter(x => !x.isSatisfier);
+    console.log(points);
     let geometric = d3.select('#geometric');
     let width = geometric.node().getBoundingClientRect().width;
     let widthMargin = width / 10;
@@ -58,13 +65,13 @@ class GeometricBSTGraph extends React.Component {
 
     console.log(height);
     let xRange = d3.scaleLinear().range([widthMargin, width - widthMargin])
-      .domain([d3.min(this.state.points, d => d.value) - 1, d3.max(this.state.points, d => d.value) + 1]);
+      .domain([d3.min(points, d => d.value) - 1, d3.max(points, d => d.value) + 1]);
 
     let yRange = d3.scaleLinear().range([heightMargin, height - heightMargin])
-      .domain([d3.max(this.state.points, d => d.time) + 1, d3.min(this.state.points, d => d.time) - 1]);
+      .domain([d3.max(points, d => d.time) + 1, d3.min(points, d => d.time) - 1]);
 
     let xAxis = d3.axisBottom(xRange)
-      .ticks(this.state.points.length);
+      .ticks(nnSatisfierPoints.length);
     let yAxis = d3.axisLeft(yRange);
 
     //geometric.remove('g.xAxis');
@@ -75,11 +82,12 @@ class GeometricBSTGraph extends React.Component {
     geometric.selectAll('g.yAxis')
       .call(yAxis);
 
-    let point = geometric.selectAll('circle.point').data(this.state.points);
+    let point = geometric.selectAll('circle.point').data(points, d=> d.value + ':' + d.time);
     point.enter()
       .append('circle')
       .attr('class', 'point')
-      .attr('stroke', 'white')
+      .attr('stroke', d => d.isSatisfier ? 'red' : 'white')
+      .attr('fill', d => d.isSatisfier ? 'red' : 'white')
       .attr('cx', d => xRange(d.value))
       .attr('cy', d => yRange(d.time))
       .attr('r', 5);
