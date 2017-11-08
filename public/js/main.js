@@ -12834,7 +12834,7 @@ var _StandardBSTGraph = __webpack_require__(67);
 
 var _StandardBSTGraph2 = _interopRequireDefault(_StandardBSTGraph);
 
-var _GeometricBSTGraph = __webpack_require__(121);
+var _GeometricBSTGraph = __webpack_require__(122);
 
 var _GeometricBSTGraph2 = _interopRequireDefault(_GeometricBSTGraph);
 
@@ -12956,15 +12956,127 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Point = function Point(value, time) {
+  var satisfier = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+  _classCallCheck(this, Point);
+
+  this.baseValue = value;
+  this.value = isNaN(value) ? parseInt(value.split('').map(function (x) {
+    return x.charCodeAt(0);
+  }).reduce(function (x, y) {
+    return x + y;
+  }, '')) : parseFloat(value);
+  this.time = time;
+  this.isSatisfier = satisfier; //used in the greedy algorithm, points inserted for satisfiability need not be satisfied
+};
+
+var GemetricBST = function () {
+  function GemetricBST() {
+    _classCallCheck(this, GemetricBST);
+
+    this.points = [];
+    this.maxTime = 0;
+  }
+
+  _createClass(GemetricBST, [{
+    key: 'insert',
+    value: function insert(_newElement) {
+      var newElement = new Point(_newElement, this.maxTime + 1);
+      this.points.push(newElement);
+      this.maxTime++;
+    }
+
+    //takes an optional parameter for what subset of times (0 - maxTime) to look at
+
+  }, {
+    key: 'runGreedyAlgorithm',
+    value: function runGreedyAlgorithm(maxTime) {
+      maxTime = maxTime || this.maxTime;
+      //iterate over the points from the bottom up
+      this.points.sort(function (a, b) {
+        return a.time < b.time ? -1 : 1;
+      });
+      for (var time = 1; time <= maxTime; time++) {
+        this.satisfyLevel(time);
+      }
+    }
+  }, {
+    key: 'satisfyLevel',
+    value: function satisfyLevel(time) {
+      console.log('satisfy ', time);
+      var subset = this.points.filter(function (x) {
+        return x.time <= time;
+      });
+      var maxSubset = {};
+      for (var i = subset.length - 1; i >= 0; i--) {
+        if (!maxSubset[subset[i].value]) {
+          maxSubset[subset[i].value] = subset[i];
+        }
+      }
+      console.log('not max subset:', subset);
+      subset = Object.keys(maxSubset).map(function (x) {
+        return maxSubset[x];
+      });
+      var levelPoint = this.points.filter(function (x) {
+        return x.time == time;
+      }).filter(function (x) {
+        return !x.isSatisfier;
+      })[0];
+      var minmax = null;
+      var maxmin = null;
+      subset.forEach(function (subsetPoint) {
+        if (subsetPoint.value == levelPoint.value) return;
+        console.log('match', subsetPoint, levelPoint);
+        console.log(subsetPoint.value > levelPoint.value);
+        if (subsetPoint.value > levelPoint.value && (minmax === null || subsetPoint.value < minmax.value)) {
+          console.log('minmax');
+          minmax = subsetPoint;
+        }
+        if (subsetPoint.value < levelPoint.value && (maxmin === null || subsetPoint.value > maxmin.value)) {
+          console.log(maxmin);
+          maxmin = subsetPoint;
+        }
+      });
+      console.log('subset:', subset, minmax, maxmin);
+      if (minmax !== null) {
+        this.points.push(new Point(minmax.value, levelPoint.time, true));
+      }
+      if (maxmin !== null) {
+        this.points.push(new Point(maxmin.value, levelPoint.time, true));
+      }
+    }
+  }]);
+
+  return GemetricBST;
+}();
+
+exports.default = GemetricBST;
+
+/***/ }),
+/* 122 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 var _react = __webpack_require__(6);
 
 var _react2 = _interopRequireDefault(_react);
 
 var _reactRedux = __webpack_require__(30);
 
-var _GeometricBSTPoint = __webpack_require__(122);
+var _GeometricBST = __webpack_require__(121);
 
-var _GeometricBSTPoint2 = _interopRequireDefault(_GeometricBSTPoint);
+var _GeometricBST2 = _interopRequireDefault(_GeometricBST);
 
 var _main = __webpack_require__(40);
 
@@ -12985,11 +13097,13 @@ var GeometricBSTGraph = function (_React$Component) {
     var _this = _possibleConstructorReturn(this, (GeometricBSTGraph.__proto__ || Object.getPrototypeOf(GeometricBSTGraph)).call(this));
 
     _this.state = {
-      points: [],
+      bst: new _GeometricBST2.default(),
       newElement: ''
     };
+    window.bst = _this.state.bst;
     _this.insertElement = _this.insertElement.bind(_this);
     _this.changeElement = _this.changeElement.bind(_this);
+    _this.runGreedyAlgorithm = _this.runGreedyAlgorithm.bind(_this);
     return _this;
   }
 
@@ -13004,10 +13118,9 @@ var GeometricBSTGraph = function (_React$Component) {
     value: function addPoint(_newElement) {
       var _this2 = this;
 
-      var newElement = new _GeometricBSTPoint2.default(_newElement, this.state.points.length + 1);
+      this.state.bst.insert(_newElement);
       this.setState({
-        newElement: '',
-        points: this.state.points.concat(newElement)
+        newElement: ''
       }, function () {
         _this2.update();
       });
@@ -13022,6 +13135,12 @@ var GeometricBSTGraph = function (_React$Component) {
     value: function insertElement(event) {
       event.preventDefault();
       this.addPoint(this.state.newElement);
+    }
+  }, {
+    key: 'runGreedyAlgorithm',
+    value: function runGreedyAlgorithm() {
+      this.state.bst.runGreedyAlgorithm();
+      this.update();
     }
   }, {
     key: 'render',
@@ -13040,13 +13159,22 @@ var GeometricBSTGraph = function (_React$Component) {
             'Insert'
           )
         ),
+        _react2.default.createElement(
+          'button',
+          { type: 'button', onClick: this.runGreedyAlgorithm },
+          'Run Greedy Algorithm'
+        ),
         _react2.default.createElement('svg', { id: 'geometric', className: 'graph' })
       );
     }
   }, {
     key: 'update',
     value: function update() {
-      console.log(this.state.points);
+      var points = this.state.bst.points;
+      var nnSatisfierPoints = this.state.bst.points.filter(function (x) {
+        return !x.isSatisfier;
+      });
+      console.log(points);
       var geometric = d3.select('#geometric');
       var width = geometric.node().getBoundingClientRect().width;
       var widthMargin = width / 10;
@@ -13055,19 +13183,19 @@ var GeometricBSTGraph = function (_React$Component) {
       console.log('translate(0,' + (height - heightMargin) + ')');
 
       console.log(height);
-      var xRange = d3.scaleLinear().range([widthMargin, width - widthMargin]).domain([d3.min(this.state.points, function (d) {
+      var xRange = d3.scaleLinear().range([widthMargin, width - widthMargin]).domain([d3.min(points, function (d) {
         return d.value;
-      }) - 1, d3.max(this.state.points, function (d) {
+      }) - 1, d3.max(points, function (d) {
         return d.value;
       }) + 1]);
 
-      var yRange = d3.scaleLinear().range([heightMargin, height - heightMargin]).domain([d3.max(this.state.points, function (d) {
+      var yRange = d3.scaleLinear().range([heightMargin, height - heightMargin]).domain([d3.max(points, function (d) {
         return d.time;
-      }) + 1, d3.min(this.state.points, function (d) {
+      }) + 1, d3.min(points, function (d) {
         return d.time;
       }) - 1]);
 
-      var xAxis = d3.axisBottom(xRange).ticks(this.state.points.length);
+      var xAxis = d3.axisBottom(xRange).ticks(nnSatisfierPoints.length);
       var yAxis = d3.axisLeft(yRange);
 
       //geometric.remove('g.xAxis');
@@ -13076,8 +13204,14 @@ var GeometricBSTGraph = function (_React$Component) {
       //geometric.remove('g.yAxis');
       geometric.selectAll('g.yAxis').call(yAxis);
 
-      var point = geometric.selectAll('circle.point').data(this.state.points);
-      point.enter().append('circle').attr('class', 'point').attr('stroke', 'white').attr('cx', function (d) {
+      var point = geometric.selectAll('circle.point').data(points, function (d) {
+        return d.value + ':' + d.time;
+      });
+      point.enter().append('circle').attr('class', 'point').attr('stroke', function (d) {
+        return d.isSatisfier ? 'red' : 'white';
+      }).attr('fill', function (d) {
+        return d.isSatisfier ? 'red' : 'white';
+      }).attr('cx', function (d) {
         return xRange(d.value);
       }).attr('cy', function (d) {
         return yRange(d.time);
@@ -13117,33 +13251,6 @@ exports.default = (0, _reactRedux.connect)(function (state, ownProps) {
     newElement: null
   };
 })(GeometricBSTGraph);
-
-/***/ }),
-/* 122 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Point = function Point(value, time) {
-  _classCallCheck(this, Point);
-
-  this.baseValue = value;
-  this.value = isNaN(value) ? parseInt(value.split('').map(function (x) {
-    return x.charCodeAt(0);
-  }).reduce(function (x, y) {
-    return x + y;
-  }, '')) : parseFloat(value);
-  this.time = time;
-};
-
-exports.default = Point;
 
 /***/ }),
 /* 123 */
