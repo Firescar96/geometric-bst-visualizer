@@ -7627,6 +7627,11 @@ var StandardBSTGraph = function (_React$Component) {
           )
         ),
         _react2.default.createElement(
+          'button',
+          null,
+          'Make Geometric BST'
+        ),
+        _react2.default.createElement(
           'svg',
           { id: 'standard', className: 'graph' },
           _react2.default.createElement('g', { id: 'links' }),
@@ -7640,9 +7645,7 @@ var StandardBSTGraph = function (_React$Component) {
       var _this3 = this;
 
       var standard = d3.select('#standard');
-      this.state.simulation.force('collision', d3.forceCollide().radius(NODE_RADIUS + 5)).force('manyBody', d3.forceManyBody().strength(1))
-      //.force('order', d3.forceY().strength(-0.1))
-      .on('tick', function () {
+      this.state.simulation.force('collision', d3.forceCollide().radius(NODE_RADIUS + 5)).force('manyBody', d3.forceManyBody().strength(1)).on('tick', function () {
         standard.selectAll('svg.node').transition().ease(function (v) {
           return d3.easeSinIn(v);
         }).duration(100).attr('x', function (d) {
@@ -7661,7 +7664,7 @@ var StandardBSTGraph = function (_React$Component) {
 
         if (_this3.props.root !== null) {
           _this3.props.root.fx = standard.node().getBoundingClientRect().width / 2;
-          _this3.props.root.fy = standard.node().getBoundingClientRect().height / 2;
+          _this3.props.root.fy = standard.node().getBoundingClientRect().height / 3;
         }
 
         standard.selectAll('text.node').text(function (d) {
@@ -12994,32 +12997,38 @@ var GemetricBST = function () {
   }, {
     key: 'runGreedyAlgorithm',
     value: function runGreedyAlgorithm(maxTime) {
-      maxTime = maxTime || this.maxTime;
-      //iterate over the points from the bottom up
       this.points.sort(function (a, b) {
         return a.time < b.time ? -1 : 1;
       });
-      for (var time = 1; time <= maxTime; time++) {
-        this.satisfyLevel(time);
+      if (maxTime === null) {
+        //iterate over the points from the bottom up
+        for (var time = 1; time <= this.maxTime; time++) {
+          this.satisfyLevel(time);
+        }
+      } else {
+        return this.satisfyLevel(maxTime);
       }
     }
   }, {
     key: 'satisfyLevel',
     value: function satisfyLevel(time) {
-      console.log('satisfy ', time);
+      //get the points that have to be checked for satisfiability
       var subset = this.points.filter(function (x) {
         return x.time <= time;
       });
       var maxSubset = {};
+      //for efficiency reasons we only need to compare to a value once, even if it has been
+      //touched in multiple timesteps
       for (var i = subset.length - 1; i >= 0; i--) {
         if (!maxSubset[subset[i].value]) {
           maxSubset[subset[i].value] = subset[i];
         }
       }
-      console.log('not max subset:', subset);
       subset = Object.keys(maxSubset).map(function (x) {
         return maxSubset[x];
       });
+
+      //for the given time get the touched point that needs satisfaction
       var levelPoint = this.points.filter(function (x) {
         return x.time == time;
       }).filter(function (x) {
@@ -13029,24 +13038,28 @@ var GemetricBST = function () {
       var maxmin = null;
       subset.forEach(function (subsetPoint) {
         if (subsetPoint.value == levelPoint.value) return;
-        console.log('match', subsetPoint, levelPoint);
-        console.log(subsetPoint.value > levelPoint.value);
+        //place a satisfaction point adjacent to the touched point to the left and right if necessary
         if (subsetPoint.value > levelPoint.value && (minmax === null || subsetPoint.value < minmax.value)) {
-          console.log('minmax');
           minmax = subsetPoint;
         }
         if (subsetPoint.value < levelPoint.value && (maxmin === null || subsetPoint.value > maxmin.value)) {
-          console.log(maxmin);
           maxmin = subsetPoint;
         }
       });
-      console.log('subset:', subset, minmax, maxmin);
+
+      var satisfiedPoints = [];
       if (minmax !== null) {
-        this.points.push(new Point(minmax.value, levelPoint.time, true));
+        var rightSatisfier = new Point(minmax.value, levelPoint.time, true);
+        this.points.push(rightSatisfier);
+        satisfiedPoints.push({ base: minmax, satisfied: levelPoint });
       }
       if (maxmin !== null) {
-        this.points.push(new Point(maxmin.value, levelPoint.time, true));
+        var leftSatisfier = new Point(maxmin.value, levelPoint.time, true);
+        console.log(maxmin, levelPoint);
+        this.points.push(leftSatisfier);
+        satisfiedPoints.push({ base: maxmin, satisfied: levelPoint });
       }
+      return satisfiedPoints;
     }
   }]);
 
@@ -13139,7 +13152,47 @@ var GeometricBSTGraph = function (_React$Component) {
   }, {
     key: 'runGreedyAlgorithm',
     value: function runGreedyAlgorithm() {
-      this.state.bst.runGreedyAlgorithm();
+      var points = this.state.bst.points;
+      var geometric = d3.select('#geometric');
+      var width = geometric.node().getBoundingClientRect().width;
+      var widthMargin = width / 10;
+      var height = geometric.node().getBoundingClientRect().height;
+      var heightMargin = height / 3;
+
+      var xRange = d3.scaleLinear().range([widthMargin, width - widthMargin]).domain([d3.min(points, function (d) {
+        return d.value;
+      }) - 1, d3.max(points, function (d) {
+        return d.value;
+      }) + 1]);
+
+      var yRange = d3.scaleLinear().range([heightMargin, height - heightMargin]).domain([d3.max(points, function (d) {
+        return d.time;
+      }) + 1, d3.min(points, function (d) {
+        return d.time;
+      }) - 1]);
+
+      for (var time = 1; time <= this.state.bst.maxTime; time++) {
+        var satisfiedPoints = this.state.bst.runGreedyAlgorithm(time);
+        var satisfyRect = geometric.selectAll('rect.satisfier').data(satisfiedPoints);
+        satisfyRect.enter().append('rect').attr('x', function (d) {
+          return xRange(d.base.value);
+        }).attr('y', function (d) {
+          return yRange(d.base.time);
+        }).transition().duration(800).attr('transform', function (d) {
+          var satisfiedWidth = Math.abs(xRange(d.base.value) - xRange(d.satisfied.value));
+          var satisfiedHeight = Math.abs(yRange(d.base.time) - yRange(d.satisfied.time));
+          if (d.satisfied.value < d.base.value) {
+            return 'translate(' + -satisfiedWidth + ',' + -satisfiedHeight + ')';
+          }
+          return 'translate(0,' + -satisfiedHeight + ')';
+        }).attr('class', 'satisfier').attr('stroke', 'green').attr('fill', 'none').attr('width', function (d) {
+          return Math.abs(xRange(d.base.value) - xRange(d.satisfied.value));
+        }).attr('height', function (d) {
+          return Math.abs(yRange(d.base.time) - yRange(d.satisfied.time));
+        }).transition().delay(100).remove();
+
+        satisfyRect.exit();
+      }
       this.update();
     }
   }, {
@@ -13174,15 +13227,12 @@ var GeometricBSTGraph = function (_React$Component) {
       var nnSatisfierPoints = this.state.bst.points.filter(function (x) {
         return !x.isSatisfier;
       });
-      console.log(points);
       var geometric = d3.select('#geometric');
       var width = geometric.node().getBoundingClientRect().width;
       var widthMargin = width / 10;
       var height = geometric.node().getBoundingClientRect().height;
       var heightMargin = height / 3;
-      console.log('translate(0,' + (height - heightMargin) + ')');
 
-      console.log(height);
       var xRange = d3.scaleLinear().range([widthMargin, width - widthMargin]).domain([d3.min(points, function (d) {
         return d.value;
       }) - 1, d3.max(points, function (d) {
@@ -13207,15 +13257,17 @@ var GeometricBSTGraph = function (_React$Component) {
       var point = geometric.selectAll('circle.point').data(points, function (d) {
         return d.value + ':' + d.time;
       });
-      point.enter().append('circle').attr('class', 'point').attr('stroke', function (d) {
-        return d.isSatisfier ? 'red' : 'white';
-      }).attr('fill', function (d) {
+      point.enter().append('circle').attr('class', 'point').attr('fill', function (d) {
         return d.isSatisfier ? 'red' : 'white';
       }).attr('cx', function (d) {
         return xRange(d.value);
       }).attr('cy', function (d) {
         return yRange(d.time);
-      }).attr('r', 5);
+      }).attr('r', 5).attr('opacity', function (d) {
+        return d.isSatisfier ? 0 : 1;
+      }).transition().duration(200).delay(function (d) {
+        return d.isSatisfier ? 900 : 0;
+      }).attr('opacity', 1);
       point.exit().remove();
       point.transition().duration(200).ease(function (v) {
         return d3.easeSinIn(v);
@@ -13223,6 +13275,19 @@ var GeometricBSTGraph = function (_React$Component) {
         return xRange(d.value);
       }).attr('cy', function (d) {
         return yRange(d.time);
+      }).attr('opacity', 1);
+
+      geometric.selectAll('rect.satisfier').attr('transform', function (d) {
+        var satisfiedWidth = Math.abs(xRange(d.base.value) - xRange(d.satisfied.value));
+        var satisfiedHeight = Math.abs(xRange(d.base.time) - xRange(d.satisfied.time));
+        if (d.satisfied.value < d.base.value) {
+          return 'translate(' + -satisfiedWidth + ',' + -satisfiedHeight + ')';
+        }
+        return 'translate(0,' + -satisfiedHeight + ')';
+      }).attr('class', 'satisfier').attr('stroke', 'green').attr('fill', 'none').attr('width', function (d) {
+        return Math.abs(xRange(d.base.value) - xRange(d.satisfied.value));
+      }).attr('height', function (d) {
+        return Math.abs(yRange(d.base.time) - yRange(d.satisfied.time));
       });
     }
   }, {

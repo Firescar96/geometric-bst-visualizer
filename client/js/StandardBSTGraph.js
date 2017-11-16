@@ -67,6 +67,7 @@ class StandardBSTGraph extends React.Component {
           <input value={this.state.newElement} onChange={this.changeElement}></input>
           <button type="submit">Insert</button>
         </form>
+        <button>Make Geometric BST</button>
         <svg id="standard" className="graph">
           <g id="links"></g>
           <g id="nodes"></g>
@@ -80,7 +81,6 @@ class StandardBSTGraph extends React.Component {
     this.state.simulation
       .force('collision', d3.forceCollide().radius(NODE_RADIUS + 5))
       .force('manyBody', d3.forceManyBody().strength(1))
-    //.force('order', d3.forceY().strength(-0.1))
       .on('tick', () => {
         standard.selectAll('svg.node').transition()
           .ease(v => d3.easeSinIn(v))
@@ -102,7 +102,7 @@ class StandardBSTGraph extends React.Component {
 
         if(this.props.root !== null) {
           this.props.root.fx = standard.node().getBoundingClientRect().width / 2;
-          this.props.root.fy = standard.node().getBoundingClientRect().height / 2;
+          this.props.root.fy = standard.node().getBoundingClientRect().height / 3;
         }
 
         standard.selectAll('text.node')
