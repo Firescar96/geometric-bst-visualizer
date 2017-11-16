@@ -14,5 +14,5 @@ main, #root {
   main .graph, #root .graph {
     width: 100%;
     height: 100%; }
-    main .graph .tick, main .graph .point, main .graph .domain, #root .graph .tick, #root .graph .point, #root .graph .domain {
+    main .graph .tick, main .graph .domain, #root .graph .tick, #root .graph .domain {
       stroke: white; }
