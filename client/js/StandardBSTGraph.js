@@ -17,12 +17,15 @@ function standardBSTReducer (state, action) {
 
   switch (action.type) {
     case INSERT_NODE:
+      let newElement = isNaN(action.newElement) ?
+        parseInt(action.newElement.split('').map(x => x.charCodeAt(0)).reduce((x, y) => x + y, '')) :
+        parseFloat(action.newElement);
       if(state.root === null) {
         return {
-          root: new Node(action.newElement),
+          root: new Node(newElement),
         };
       }
-      state.root.insert(action.newElement);
+      state.root.insert(newElement);
     default:
       return state;
   }
@@ -53,11 +56,12 @@ class StandardBSTGraph extends React.Component {
     store.dispatch({type: CLEAR_POINTS});
     let nodes = this.props.root.levelTraversal();
     nodes.forEach((node, i) => {
-      let point = new Point(node.key, i);
+      let point = new Point(node.key, node.value, i + 1);
+      console.log(point);
       store.dispatch({type: ADD_POINT, point});
       node.getAncestors().forEach(ancestor => {
-        point = new Point(ancestor.key, i);
-        console.log(point);
+        console.log(ancestor);
+        point = new Point(ancestor.key, ancestor.value, i + 1);
         point.isSatisfier = true;
         store.dispatch({type: ADD_POINT, point});
       });

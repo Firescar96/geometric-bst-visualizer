@@ -26,7 +26,7 @@ function geometricBSTReducer (state, action) {
         newElement: null,
       });
     case ADD_POINT:
-      state.bst.insertPoint(action.point);
+      state.bst.insert(action.point);
       return state;
     case CLEAR_POINTS:
       return Object.assign({}, state, {
@@ -49,7 +49,10 @@ class GeometricBSTGraph extends React.Component {
     this.makeStandardBst = this.makeStandardBst.bind(this);
   }
   addPoint (_newElement) {
-    this.props.bst.insert(_newElement);
+    let newElement = isNaN(_newElement) ?
+      parseInt(_newElement.split('').map(x => x.charCodeAt(0)).reduce((x, y) => x + y, '')) :
+      parseFloat(_newElement);
+    this.props.bst.insert(newElement, _newElement);
     this.setState({
       newElement: '',
     });
@@ -73,7 +76,7 @@ class GeometricBSTGraph extends React.Component {
     let heightMargin = height / 3;
 
     let xRange = d3.scaleLinear().range([widthMargin, width - widthMargin])
-      .domain([d3.min(points, d => d.value) - 1, d3.max(points, d => d.value) + 1]);
+      .domain([d3.min(points, d => d.key) - 1, d3.max(points, d => d.key) + 1]);
 
     let yRange = d3.scaleLinear().range([heightMargin, height - heightMargin])
       .domain([d3.max(points, d => d.time) + 1, d3.min(points, d => d.time) - 1]);
@@ -84,14 +87,14 @@ class GeometricBSTGraph extends React.Component {
         .data(satisfiedPoints);
       satisfyRect.enter()
         .append('rect')
-        .attr('x', d => xRange(d.base.value))
+        .attr('x', d => xRange(d.base.key))
         .attr('y', d => yRange(d.base.time))
         .transition()
         .duration(500)
         .attr('transform', d => {
-          let satisfiedWidth = Math.abs(xRange(d.base.value) - xRange(d.satisfied.value));
+          let satisfiedWidth = Math.abs(xRange(d.base.key) - xRange(d.satisfied.key));
           let satisfiedHeight = Math.abs(yRange(d.base.time) - yRange(d.satisfied.time));
-          if(d.satisfied.value < d.base.value) {
+          if(d.satisfied.key < d.base.key) {
             return 'translate(' + -satisfiedWidth
              + ',' + -satisfiedHeight + ')';
           }
@@ -100,7 +103,7 @@ class GeometricBSTGraph extends React.Component {
         .attr('class', 'satisfier')
         .attr('stroke', 'green')
         .attr('fill', 'none')
-        .attr('width', d => Math.abs(xRange(d.base.value) - xRange(d.satisfied.value)))
+        .attr('width', d => Math.abs(xRange(d.base.key) - xRange(d.satisfied.key)))
         .attr('height', d => Math.abs(yRange(d.base.time) - yRange(d.satisfied.time)))
         .transition()
         .delay(100)
@@ -141,7 +144,7 @@ class GeometricBSTGraph extends React.Component {
     let heightMargin = height / 3;
 
     let xRange = d3.scaleLinear().range([widthMargin, width - widthMargin])
-      .domain([d3.min(points, d => d.value) - 1, d3.max(points, d => d.value) + 1]);
+      .domain([d3.min(points, d => d.key) - 1, d3.max(points, d => d.key) + 1]);
 
     let yRange = d3.scaleLinear().range([heightMargin, height - heightMargin])
       .domain([d3.max(points, d => d.time) + 1, d3.min(points, d => d.time) - 1]);
@@ -158,12 +161,12 @@ class GeometricBSTGraph extends React.Component {
     geometric.selectAll('g.yAxis')
       .call(yAxis);
 
-    let point = geometric.selectAll('circle.point').data(points, d=> d.value + ':' + d.time);
+    let point = geometric.selectAll('circle.point').data(points, d=> d.key + ':' + d.time);
     point.enter()
       .append('circle')
       .attr('class', 'point')
       .attr('fill', d => d.isSatisfier ? 'red' : 'white')
-      .attr('cx', d => xRange(d.value))
+      .attr('cx', d => xRange(d.key))
       .attr('cy', d => yRange(d.time))
       .attr('r', 5)
       .attr('opacity', d => d.isSatisfier ? 0 : 1)
@@ -176,15 +179,15 @@ class GeometricBSTGraph extends React.Component {
       .duration(200)
       .ease(v => d3.easeSinIn(v))
       .attr('fill', d => d.isSatisfier ? 'red' : 'white')
-      .attr('cx', d => xRange(d.value))
+      .attr('cx', d => xRange(d.key))
       .attr('cy', d => yRange(d.time))
       .attr('opacity', 1);
 
     geometric.selectAll('rect.satisfier')
       .attr('transform', d => {
-        let satisfiedWidth = Math.abs(xRange(d.base.value) - xRange(d.satisfied.value));
+        let satisfiedWidth = Math.abs(xRange(d.base.key) - xRange(d.satisfied.key));
         let satisfiedHeight = Math.abs(xRange(d.base.time) - xRange(d.satisfied.time));
-        if(d.satisfied.value < d.base.value) {
+        if(d.satisfied.key < d.base.key) {
           return 'translate(' + -satisfiedWidth
            + ',' + -satisfiedHeight + ')';
         }
@@ -193,7 +196,7 @@ class GeometricBSTGraph extends React.Component {
       .attr('class', 'satisfier')
       .attr('stroke', 'green')
       .attr('fill', 'none')
-      .attr('width', d => Math.abs(xRange(d.base.value) - xRange(d.satisfied.value)))
+      .attr('width', d => Math.abs(xRange(d.base.key) - xRange(d.satisfied.key)))
       .attr('height', d => Math.abs(yRange(d.base.time) - yRange(d.satisfied.time)));
   }
 

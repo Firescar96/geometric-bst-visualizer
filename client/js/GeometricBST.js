@@ -1,9 +1,7 @@
 class Point {
-  constructor (value, time, satisfier = false) {
-    this.baseValue = value;
-    this.value = isNaN(value) ?
-      parseInt(value.split('').map(x => x.charCodeAt(0)).reduce((x, y) => x + y, '')) :
-      parseFloat(value);
+  constructor (key, value, time, satisfier = false) {
+    this.key = key;
+    this.value = value;
     this.time = time;
     this.isSatisfier = satisfier; //used in the greedy algorithm, points inserted for satisfiability need not be satisfied
   }
@@ -13,19 +11,19 @@ class GemetricBST {
   constructor () {
     this.points = [];
     this.maxTime = 0;
+    window.bst = this;
   }
 
-  insert (_newElement) {
-    let newElement = new Point(_newElement, this.maxTime + 1);
-    this.points.push(newElement);
-    this.maxTime++;
+  insert (key, value) {
+    if(key instanceof Point) {
+      this.points.push(key);
+      this.maxTime = Math.max(this.maxTime, key.time);
+    }else {
+      let newElement = new Point(key, value, this.maxTime + 1);
+      this.points.push(newElement);
+      this.maxTime++;
+    }
   }
-
-  insertPoint (point) {
-    this.points.push(point);
-    this.maxTime = Math.max(this.maxTime, point.time);
-  }
-
   //takes an optional parameter for what subset of times (0 - maxTime) to look at
   runGreedyAlgorithm (maxTime) {
     this.points.sort((a, b) => a.time < b.time ? -1 : 1);
@@ -72,7 +70,6 @@ class GemetricBST {
       //satisfiability box
       let rangeMin = Math.min(unsatisfiedPoint.value, levelPoint.value);
       let rangeMax = Math.max(unsatisfiedPoint.value, levelPoint.value);
-      console.log(rangeMin, rangeMax, levelValues);
       let valueSetsKeys = Object.keys(valueSets);
       for(let i = 0; i < valueSetsKeys.length; i++) {
         if(i < rangeMin)continue;
@@ -81,10 +78,8 @@ class GemetricBST {
         if(!valueSets[i])continue;
         if(valueSets[i].includes(unsatisfiedPoint.time))return;
       }
-      console.log('dd');
       //this checks if there are satisfying points along the top segment of the
       //satisfiability box
-      ////TODO: see if it still works without the <= and >=
       let isTopSatisfied;
       if(unsatisfiedPoint.value < levelPoint.value) {
         isTopSatisfied = levelValues.filter(x => x < rangeMax && x >= rangeMin).length > 0;
@@ -93,8 +88,7 @@ class GemetricBST {
       }
       if(isTopSatisfied)return;
 
-      let satisfier = new Point(unsatisfiedPoint.value, levelPoint.time, true);
-      console.log('satisfier', satisfier);
+      let satisfier = new Point(unsatisfiedPoint.key, unsatisfiedPoint.value, levelPoint.time, true);
       this.points.push(satisfier);
       agenda.push(satisfier);
       levelValues.push(satisfier.value);
@@ -106,13 +100,10 @@ class GemetricBST {
     while(agenda.length > 0 && count < 5) {
       count++;
       let levelPoint = agenda.pop();
-      console.log(levelPoint);
-      console.log('valueSets', valueSets);
       //this checks for satisfiability along the vertical segment below the levelPoint
       //by definition of max subset there are no points above each of these
       //so we don't have to check the other vertical segment
       let unsatisfiedPoints = maxSubset.filter(x => !valueSets[levelPoint.value].includes(x.time));
-      console.log('unsatisfiedPoints', unsatisfiedPoints);
       let minmax = null;
       let maxmin = null;
       for(let unsatIndex = 0; unsatIndex < unsatisfiedPoints.length; unsatIndex++) {
@@ -126,7 +117,6 @@ class GemetricBST {
           maxmin = unsatPoint;
         }
       }
-      console.log(minmax, maxmin);
       satisfy(minmax, levelPoint);
       satisfy(maxmin, levelPoint);
     }
