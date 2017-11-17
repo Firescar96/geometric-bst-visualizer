@@ -5053,9 +5053,14 @@ var _redux = __webpack_require__(68);
 
 var _StandardBSTGraph = __webpack_require__(67);
 
+var _GeometricBSTGraph = __webpack_require__(122);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var store = (0, _redux.createStore)(_StandardBSTGraph.standardBSTReducer);
+var store = (0, _redux.createStore)((0, _redux.combineReducers)({
+  standardBST: _StandardBSTGraph.standardBSTReducer,
+  geometricBST: _GeometricBSTGraph.geometricBSTReducer
+}));
 exports.store = store; //exported here so it's available in all the subcompnents
 
 (0, _reactDom.render)(_react2.default.createElement(
@@ -7530,6 +7535,8 @@ var _StandardBSTNode2 = _interopRequireDefault(_StandardBSTNode);
 
 var _main = __webpack_require__(40);
 
+var _GeometricBST = __webpack_require__(121);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -7541,34 +7548,25 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var NODE_RADIUS = 10;
-var ADD_ROOT = 'ADD ROOT';
-
-function addRoot(newElement) {
-  return { type: ADD_ROOT, newElement: newElement };
-}
+var ADD_POINT = 'ADD POINT';
+var INSERT_NODE = 'INSERT NODE';
+var CLEAR_POINTS = 'CLEAR POINTS';
 
 function standardBSTReducer(state, action) {
   if (state === undefined) {
     return {
-      root: null,
-      numElements: 0
+      root: null
     };
   }
 
   switch (action.type) {
-    case ADD_ROOT:
+    case INSERT_NODE:
       if (state.root === null) {
         return {
-          root: new _StandardBSTNode2.default(action.newElement),
-          numElements: ++state.numElements,
-          newElement: action.newElement
+          root: new _StandardBSTNode2.default(action.newElement)
         };
       }
       state.root.insert(action.newElement);
-      return Object.assign({}, state, {
-        numElements: ++state.numElements,
-        newElement: action.newElement
-      });
     default:
       return state;
   }
@@ -7588,6 +7586,7 @@ var StandardBSTGraph = function (_React$Component) {
     };
     _this.insertElement = _this.insertElement.bind(_this);
     _this.changeElement = _this.changeElement.bind(_this);
+    _this.makeGeometricBST = _this.makeGeometricBST.bind(_this);
     return _this;
   }
 
@@ -7599,14 +7598,26 @@ var StandardBSTGraph = function (_React$Component) {
   }, {
     key: 'insertElement',
     value: function insertElement(event) {
-      var _this2 = this;
-
       var newElement = this.state.newElement;
 
       event.preventDefault();
-      _main.store.dispatch(addRoot(newElement));
-      this.setState({ newElement: '' }, function () {
-        _this2.update();
+      _main.store.dispatch({ type: INSERT_NODE, newElement: newElement });
+      this.setState({ newElement: '' });
+    }
+  }, {
+    key: 'makeGeometricBST',
+    value: function makeGeometricBST() {
+      _main.store.dispatch({ type: CLEAR_POINTS });
+      var nodes = this.props.root.levelTraversal();
+      nodes.forEach(function (node, i) {
+        var point = new _GeometricBST.Point(node.key, i);
+        _main.store.dispatch({ type: ADD_POINT, point: point });
+        node.getAncestors().forEach(function (ancestor) {
+          point = new _GeometricBST.Point(ancestor.key, i);
+          console.log(point);
+          point.isSatisfier = true;
+          _main.store.dispatch({ type: ADD_POINT, point: point });
+        });
       });
     }
   }, {
@@ -7628,7 +7639,7 @@ var StandardBSTGraph = function (_React$Component) {
         ),
         _react2.default.createElement(
           'button',
-          null,
+          { onClick: this.makeGeometricBST },
           'Make Geometric BST'
         ),
         _react2.default.createElement(
@@ -7642,29 +7653,29 @@ var StandardBSTGraph = function (_React$Component) {
   }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
-      var _this3 = this;
+      var _this2 = this;
 
       var standard = d3.select('#standard');
       this.state.simulation.force('collision', d3.forceCollide().radius(NODE_RADIUS + 5)).force('manyBody', d3.forceManyBody().strength(1)).on('tick', function () {
         standard.selectAll('svg.node').transition().ease(function (v) {
           return d3.easeSinIn(v);
         }).duration(100).attr('x', function (d) {
-          if (d.parent !== undefined && d.parent.x !== undefined) {
+          if (d.parent !== null && d.parent.x !== null) {
             var delta = NODE_RADIUS;
             delta *= Math.pow(2, d.parent.height);
             d.x = d == d.parent.left ? d.parent.x - delta : d.parent.x + delta;
           }
           return d.x;
         }).attr('y', function (d) {
-          if (d.parent !== undefined && d.parent.y !== undefined) {
+          if (d.parent !== null && d.parent.y !== null) {
             d.y = d.parent.y + 50;
           }
           return d.y;
         });
 
-        if (_this3.props.root !== null) {
-          _this3.props.root.fx = standard.node().getBoundingClientRect().width / 2;
-          _this3.props.root.fy = standard.node().getBoundingClientRect().height / 3;
+        if (_this2.props.root !== null) {
+          _this2.props.root.fx = standard.node().getBoundingClientRect().width / 2;
+          _this2.props.root.fy = standard.node().getBoundingClientRect().height / 3;
         }
 
         standard.selectAll('text.node').text(function (d) {
@@ -7683,11 +7694,11 @@ var StandardBSTGraph = function (_React$Component) {
           return d.target.y + NODE_RADIUS * 2;
         });
       });
-      this.update();
+      this.componentDidUpdate();
     }
   }, {
-    key: 'update',
-    value: function update() {
+    key: 'componentDidUpdate',
+    value: function componentDidUpdate() {
       if (this.props.root === null) return;
 
       var standard = d3.select('#standard');
@@ -7707,7 +7718,6 @@ var StandardBSTGraph = function (_React$Component) {
 
       var linkList = linkChildren(this.props.root);
       var link = standard.select('#links').selectAll('line.link').data(linkList, function (d) {
-        console.log(d.target);
         return d.target.id;
       });
       link.enter().append('line').attr('class', 'link').attr('stroke', '#ddd').attr('stroke-width', 5);
@@ -7741,7 +7751,7 @@ var StandardBSTGraph = function (_React$Component) {
 
 exports.default = (0, _reactRedux.connect)(function (state, ownProps) {
   return {
-    root: state.root
+    root: state.standardBST.root
   };
 })(StandardBSTGraph);
 exports.standardBSTReducer = standardBSTReducer;
@@ -12991,6 +13001,12 @@ var GemetricBST = function () {
       this.points.push(newElement);
       this.maxTime++;
     }
+  }, {
+    key: 'insertPoint',
+    value: function insertPoint(point) {
+      this.points.push(point);
+      this.maxTime = Math.max(this.maxTime, point.time);
+    }
 
     //takes an optional parameter for what subset of times (0 - maxTime) to look at
 
@@ -13012,52 +13028,118 @@ var GemetricBST = function () {
   }, {
     key: 'satisfyLevel',
     value: function satisfyLevel(time) {
+      var _this = this;
+
       //get the points that have to be checked for satisfiability
       var subset = this.points.filter(function (x) {
         return x.time <= time;
       });
+      //for efficiency precompute the maximum time access for all values
       var maxSubset = {};
+      //for efficiency precompute all the times that a value was accessed
+      var valueSets = {};
       //for efficiency reasons we only need to compare to a value once, even if it has been
       //touched in multiple timesteps
       for (var i = subset.length - 1; i >= 0; i--) {
-        if (!maxSubset[subset[i].value]) {
+        if (!maxSubset[subset[i].value] || subset[i].value > maxSubset[subset[i].value]) {
           maxSubset[subset[i].value] = subset[i];
         }
+        if (!valueSets[subset[i].value]) {
+          valueSets[subset[i].value] = [subset[i].time];
+        } else {
+          valueSets[subset[i].value].push(subset[i].time);
+        }
       }
-      subset = Object.keys(maxSubset).map(function (x) {
+      maxSubset = Object.keys(maxSubset).map(function (x) {
         return maxSubset[x];
-      });
-
-      //for the given time get the touched point that needs satisfaction
-      var levelPoint = this.points.filter(function (x) {
-        return x.time == time;
       }).filter(function (x) {
-        return !x.isSatisfier;
-      })[0];
-      var minmax = null;
-      var maxmin = null;
-      subset.forEach(function (subsetPoint) {
-        if (subsetPoint.value == levelPoint.value) return;
-        //place a satisfaction point adjacent to the touched point to the left and right if necessary
-        if (subsetPoint.value > levelPoint.value && (minmax === null || subsetPoint.value < minmax.value)) {
-          minmax = subsetPoint;
-        }
-        if (subsetPoint.value < levelPoint.value && (maxmin === null || subsetPoint.value > maxmin.value)) {
-          maxmin = subsetPoint;
-        }
+        return x.time < time;
       });
 
+      //for the given time get the touched points that need satisfaction and satisfy them
+      var agenda = subset.filter(function (x) {
+        return x.time == time;
+      });
+      var levelValues = agenda.map(function (x) {
+        return x.value;
+      });
       var satisfiedPoints = [];
-      if (minmax !== null) {
-        var rightSatisfier = new Point(minmax.value, levelPoint.time, true);
-        this.points.push(rightSatisfier);
-        satisfiedPoints.push({ base: minmax, satisfied: levelPoint });
-      }
-      if (maxmin !== null) {
-        var leftSatisfier = new Point(maxmin.value, levelPoint.time, true);
-        console.log(maxmin, levelPoint);
-        this.points.push(leftSatisfier);
-        satisfiedPoints.push({ base: maxmin, satisfied: levelPoint });
+
+      var satisfy = function satisfy(unsatisfiedPoint, levelPoint) {
+        if (unsatisfiedPoint === null) return;
+
+        //this checks if there are satisfying points along the bottom segment of the
+        //satisfiability box
+        var rangeMin = Math.min(unsatisfiedPoint.value, levelPoint.value);
+        var rangeMax = Math.max(unsatisfiedPoint.value, levelPoint.value);
+        console.log(rangeMin, rangeMax, levelValues);
+        var valueSetsKeys = Object.keys(valueSets);
+        for (var _i = 0; _i < valueSetsKeys.length; _i++) {
+          if (_i < rangeMin) continue;
+          if (_i > rangeMax) break;
+          if (_i == unsatisfiedPoint.value) continue;
+          if (!valueSets[_i]) continue;
+          if (valueSets[_i].includes(unsatisfiedPoint.time)) return;
+        }
+        console.log('dd');
+        //this checks if there are satisfying points along the top segment of the
+        //satisfiability box
+        ////TODO: see if it still works without the <= and >=
+        var isTopSatisfied = void 0;
+        if (unsatisfiedPoint.value < levelPoint.value) {
+          isTopSatisfied = levelValues.filter(function (x) {
+            return x < rangeMax && x >= rangeMin;
+          }).length > 0;
+        } else {
+          isTopSatisfied = levelValues.filter(function (x) {
+            return x <= rangeMax && x > rangeMin;
+          }).length > 0;
+        }
+        if (isTopSatisfied) return;
+
+        var satisfier = new Point(unsatisfiedPoint.value, levelPoint.time, true);
+        console.log('satisfier', satisfier);
+        _this.points.push(satisfier);
+        agenda.push(satisfier);
+        levelValues.push(satisfier.value);
+        valueSets[satisfier.value].push(satisfier.time);
+        maxSubset = maxSubset.filter(function (x) {
+          return x.value !== satisfier.value;
+        });
+        satisfiedPoints.push({ base: unsatisfiedPoint, satisfied: levelPoint });
+      };
+      var count = 0;
+
+      var _loop = function _loop() {
+        count++;
+        var levelPoint = agenda.pop();
+        console.log(levelPoint);
+        console.log('valueSets', valueSets);
+        //this checks for satisfiability along the vertical segment below the levelPoint
+        //by definition of max subset there are no points above each of these
+        //so we don't have to check the other vertical segment
+        var unsatisfiedPoints = maxSubset.filter(function (x) {
+          return !valueSets[levelPoint.value].includes(x.time);
+        });
+        console.log('unsatisfiedPoints', unsatisfiedPoints);
+        var minmax = null;
+        var maxmin = null;
+        for (var unsatIndex = 0; unsatIndex < unsatisfiedPoints.length; unsatIndex++) {
+          var unsatPoint = unsatisfiedPoints[unsatIndex];
+          if (unsatPoint.value > levelPoint.value && (minmax === null || unsatPoint.value < minmax.value)) {
+            minmax = unsatPoint;
+          }
+          if (unsatPoint.value < levelPoint.value && (maxmin === null || unsatPoint.value > maxmin.value)) {
+            maxmin = unsatPoint;
+          }
+        }
+        console.log(minmax, maxmin);
+        satisfy(minmax, levelPoint);
+        satisfy(maxmin, levelPoint);
+      };
+
+      while (agenda.length > 0 && count < 5) {
+        _loop();
       }
       return satisfiedPoints;
     }
@@ -13066,6 +13148,7 @@ var GemetricBST = function () {
   return GemetricBST;
 }();
 
+exports.Point = Point;
 exports.default = GemetricBST;
 
 /***/ }),
@@ -13078,6 +13161,7 @@ exports.default = GemetricBST;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.geometricBSTReducer = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -13093,6 +13177,10 @@ var _GeometricBST2 = _interopRequireDefault(_GeometricBST);
 
 var _main = __webpack_require__(40);
 
+var _MinHeap = __webpack_require__(278);
+
+var _MinHeap2 = _interopRequireDefault(_MinHeap);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -13100,6 +13188,40 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var ADD_POINT = 'ADD POINT';
+var INSERT_NODE = 'INSERT NODE';
+var CLEAR_NODE = 'CLEAR NODE';
+var CLEAR_POINTS = 'CLEAR POINTS';
+window.MinHeap = _MinHeap2.default;
+function geometricBSTReducer(state, action) {
+  if (state === undefined) {
+    return {
+      newElement: null,
+      bst: new _GeometricBST2.default()
+    };
+  }
+
+  switch (action.type) {
+    case INSERT_NODE:
+      return Object.assign({}, state, {
+        newElement: action.newElement
+      });
+    case CLEAR_NODE:
+      return Object.assign({}, state, {
+        newElement: null
+      });
+    case ADD_POINT:
+      state.bst.insertPoint(action.point);
+      return state;
+    case CLEAR_POINTS:
+      return Object.assign({}, state, {
+        bst: new _GeometricBST2.default()
+      });
+    default:
+      return state;
+  }
+}
 
 var GeometricBSTGraph = function (_React$Component) {
   _inherits(GeometricBSTGraph, _React$Component);
@@ -13110,32 +13232,21 @@ var GeometricBSTGraph = function (_React$Component) {
     var _this = _possibleConstructorReturn(this, (GeometricBSTGraph.__proto__ || Object.getPrototypeOf(GeometricBSTGraph)).call(this));
 
     _this.state = {
-      bst: new _GeometricBST2.default(),
       newElement: ''
     };
-    window.bst = _this.state.bst;
     _this.insertElement = _this.insertElement.bind(_this);
     _this.changeElement = _this.changeElement.bind(_this);
     _this.runGreedyAlgorithm = _this.runGreedyAlgorithm.bind(_this);
+    _this.makeStandardBst = _this.makeStandardBst.bind(_this);
     return _this;
   }
 
   _createClass(GeometricBSTGraph, [{
-    key: 'standardBSTUpdate',
-    value: function standardBSTUpdate(test) {
-      var state = _main.store.getState();
-      this.addPoint(state.newElement);
-    }
-  }, {
     key: 'addPoint',
     value: function addPoint(_newElement) {
-      var _this2 = this;
-
-      this.state.bst.insert(_newElement);
+      this.props.bst.insert(_newElement);
       this.setState({
         newElement: ''
-      }, function () {
-        _this2.update();
       });
     }
   }, {
@@ -13150,9 +13261,14 @@ var GeometricBSTGraph = function (_React$Component) {
       this.addPoint(this.state.newElement);
     }
   }, {
+    key: 'makeStandardBst',
+    value: function makeStandardBst() {
+      console.log(_MinHeap2.default);
+    }
+  }, {
     key: 'runGreedyAlgorithm',
     value: function runGreedyAlgorithm() {
-      var points = this.state.bst.points;
+      var points = this.props.bst.points;
       var geometric = d3.select('#geometric');
       var width = geometric.node().getBoundingClientRect().width;
       var widthMargin = width / 10;
@@ -13171,14 +13287,14 @@ var GeometricBSTGraph = function (_React$Component) {
         return d.time;
       }) - 1]);
 
-      for (var time = 1; time <= this.state.bst.maxTime; time++) {
-        var satisfiedPoints = this.state.bst.runGreedyAlgorithm(time);
+      for (var time = 1; time <= this.props.bst.maxTime; time++) {
+        var satisfiedPoints = this.props.bst.runGreedyAlgorithm(time);
         var satisfyRect = geometric.selectAll('rect.satisfier').data(satisfiedPoints);
         satisfyRect.enter().append('rect').attr('x', function (d) {
           return xRange(d.base.value);
         }).attr('y', function (d) {
           return yRange(d.base.time);
-        }).transition().duration(800).attr('transform', function (d) {
+        }).transition().duration(500).attr('transform', function (d) {
           var satisfiedWidth = Math.abs(xRange(d.base.value) - xRange(d.satisfied.value));
           var satisfiedHeight = Math.abs(yRange(d.base.time) - yRange(d.satisfied.time));
           if (d.satisfied.value < d.base.value) {
@@ -13193,7 +13309,12 @@ var GeometricBSTGraph = function (_React$Component) {
 
         satisfyRect.exit();
       }
-      this.update();
+      this.componentDidUpdate();
+    }
+  }, {
+    key: 'clear',
+    value: function clear() {
+      this.setState({ bst: new _GeometricBST2.default() });
     }
   }, {
     key: 'render',
@@ -13217,14 +13338,23 @@ var GeometricBSTGraph = function (_React$Component) {
           { type: 'button', onClick: this.runGreedyAlgorithm },
           'Run Greedy Algorithm'
         ),
+        _react2.default.createElement(
+          'button',
+          { onClick: this.makeStandardBst },
+          'Make Standard BST'
+        ),
         _react2.default.createElement('svg', { id: 'geometric', className: 'graph' })
       );
     }
   }, {
-    key: 'update',
-    value: function update() {
-      var points = this.state.bst.points;
-      var nnSatisfierPoints = this.state.bst.points.filter(function (x) {
+    key: 'componentDidUpdate',
+    value: function componentDidUpdate() {
+      if (this.props.newElement !== null) {
+        this.addPoint(this.props.newElement);
+        _main.store.dispatch({ type: CLEAR_NODE, newElement: null });
+      }
+      var points = this.props.bst.points;
+      var nnSatisfierPoints = this.props.bst.points.filter(function (x) {
         return !x.isSatisfier;
       });
       var geometric = d3.select('#geometric');
@@ -13266,11 +13396,13 @@ var GeometricBSTGraph = function (_React$Component) {
       }).attr('r', 5).attr('opacity', function (d) {
         return d.isSatisfier ? 0 : 1;
       }).transition().duration(200).delay(function (d) {
-        return d.isSatisfier ? 900 : 0;
+        return d.isSatisfier ? 500 : 0;
       }).attr('opacity', 1);
       point.exit().remove();
       point.transition().duration(200).ease(function (v) {
         return d3.easeSinIn(v);
+      }).attr('fill', function (d) {
+        return d.isSatisfier ? 'red' : 'white';
       }).attr('cx', function (d) {
         return xRange(d.value);
       }).attr('cy', function (d) {
@@ -13293,7 +13425,6 @@ var GeometricBSTGraph = function (_React$Component) {
   }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
-      _main.store.subscribe(this.standardBSTUpdate.bind(this));
       var geometric = d3.select('#geometric');
       var width = geometric.node().getBoundingClientRect().width;
       var widthMargin = width / 10;
@@ -13311,11 +13442,12 @@ var GeometricBSTGraph = function (_React$Component) {
 
 exports.default = (0, _reactRedux.connect)(function (state, ownProps) {
   return {
-    root: state.root,
-    numElements: state.numElements,
-    newElement: null
+    root: state.standardBST.root,
+    newElement: state.geometricBST.newElement,
+    bst: state.geometricBST.bst
   };
 })(GeometricBSTGraph);
+exports.geometricBSTReducer = geometricBSTReducer;
 
 /***/ }),
 /* 123 */
@@ -13336,13 +13468,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 //BST balanced by height
 var Node = function () {
-  function Node(key, parent) {
+  function Node(key, value, parent) {
     _classCallCheck(this, Node);
 
-    this.parent = parent;
+    this.parent = parent || null;
     this.left = null;
     this.right = null;
     this.key = key;
+    this.value = value || key;
     this.numLeftChildren = 0;
     this.numRightChildren = 0;
     this.height = 0;
@@ -13361,7 +13494,7 @@ var Node = function () {
       if (key < this.key) {
         this.numLeftChildren++;
         if (this.left === null) {
-          this.left = new Node(key, this);
+          this.left = new Node(key, key, this);
         } else {
           this.left.insert(key);
         }
@@ -13370,7 +13503,7 @@ var Node = function () {
       if (key >= this.key) {
         this.numRightChildren++;
         if (this.right === null) {
-          this.right = new Node(key, this);
+          this.right = new Node(key, key, this);
         } else {
           this.right.insert(key);
         }
@@ -13475,6 +13608,9 @@ var Node = function () {
       if (this.numLeftChildren > 0) this.height = Math.max(this.height, 1 + this.left.height);
       if (this.numRightChildren > 0) this.height = Math.max(this.height, 1 + this.right.height);
     }
+
+    //in order traversal of the nodes
+
   }, {
     key: 'traversal',
     value: function traversal() {
@@ -13484,6 +13620,38 @@ var Node = function () {
       if (this.right !== null) elements.push.apply(elements, _toConsumableArray(this.right.traversal()));
 
       return elements;
+    }
+
+    //traversal by each level from the root to the leaves
+
+  }, {
+    key: 'levelTraversal',
+    value: function levelTraversal() {
+      var elements = [];
+      var agenda = [this];
+      while (agenda.length > 0) {
+        var curElem = agenda.shift();
+        elements.push(curElem);
+        if (curElem.left !== null) {
+          agenda.push(curElem.left);
+        }
+        if (curElem.right !== null) {
+          agenda.push(curElem.right);
+        }
+      }
+      console.log(elements);
+      return elements;
+    }
+  }, {
+    key: 'getAncestors',
+    value: function getAncestors() {
+      var ancestors = [];
+      var curElem = this;
+      while (curElem.parent !== null) {
+        curElem = curElem.parent;
+        ancestors.push(curElem);
+      }
+      return ancestors;
     }
   }, {
     key: 'find',
@@ -29594,6 +29762,125 @@ module.exports = function(module) {
 	return module;
 };
 
+
+/***/ }),
+/* 274 */,
+/* 275 */,
+/* 276 */,
+/* 277 */,
+/* 278 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var MinHeap = function () {
+  function MinHeap(criteria) {
+    _classCallCheck(this, MinHeap);
+
+    this.criteria = criteria;
+    this.length = 0;
+    this.queue = [];
+  }
+
+  _createClass(MinHeap, [{
+    key: "insert",
+    value: function insert(value) {
+      this.queue.push(value);
+      this.length++;
+      this.bubbleUp(this.length - 1);
+    }
+  }, {
+    key: "peek",
+    value: function peek() {
+      return this.queue[0];
+    }
+  }, {
+    key: "pop",
+    value: function pop() {
+      var oldRoot = this.queue[0];
+      var newRoot = this.queue.pop();
+      this.length--;
+      this.queue[0] = newRoot;
+      this._fixHeap(0);
+      return oldRoot;
+    }
+  }, {
+    key: "bubbleUp",
+    value: function bubbleUp(index) {
+      if (index === 0) {
+        return;
+      }
+      var parent = this.getParentIndex(index);
+      if (this.evaluate(index, parent)) {
+        this.swap(index, parent);
+        this.bubbleUp(parent);
+      } else {
+        return;
+      }
+    }
+  }, {
+    key: "_fixHeap",
+    value: function _fixHeap(value) {
+      var left = this.getLeftIndex(value);
+      var right = this.getRightIndex(value);
+
+      if (this.evaluate(left, value)) {
+        this.swap(value, left);
+        this._fixHeap(left);
+      } else if (this.evaluate(right, value)) {
+        this.swap(value, right);
+        this._fixHeap(right);
+      } else if (value === 0) {
+        return;
+      } else {
+        this._fixHeap(0);
+      }
+    }
+  }, {
+    key: "swap",
+    value: function swap(self, target) {
+      var placeHolder = this.queue[self];
+      this.queue[self] = this.queue[target];
+      this.queue[target] = placeHolder;
+    }
+  }, {
+    key: "evaluate",
+    value: function evaluate(self, target) {
+      if (this.queue[target] === null || this.queue[self] === null) {
+        return false;
+      }
+      return this.queue[self][this.criteria] < this.queue[target][this.criteria];
+    }
+  }, {
+    key: "getParentIndex",
+    value: function getParentIndex(index) {
+      return Math.floor((index - 1) / 2);
+    }
+  }, {
+    key: "getLeftIndex",
+    value: function getLeftIndex(index) {
+      return index * 2 + 1;
+    }
+  }, {
+    key: "getRightIndex",
+    value: function getRightIndex(index) {
+      return index * 2 + 2;
+    }
+  }]);
+
+  return MinHeap;
+}();
+
+exports.default = MinHeap;
 
 /***/ })
 /******/ ]);

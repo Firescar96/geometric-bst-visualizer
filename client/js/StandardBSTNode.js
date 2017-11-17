@@ -1,10 +1,11 @@
 //BST balanced by height
 class Node {
-  constructor (key, parent) {
-    this.parent = parent;
+  constructor (key, value, parent) {
+    this.parent = parent || null;
     this.left = null;
     this.right = null;
     this.key = key;
+    this.value = value || key;
     this.numLeftChildren = 0;
     this.numRightChildren = 0;
     this.height = 0;
@@ -19,7 +20,7 @@ class Node {
     if(key < this.key) {
       this.numLeftChildren++;
       if(this.left === null) {
-        this.left = new Node(key, this);
+        this.left = new Node(key, key, this);
       }else {
         this.left.insert(key);
       }
@@ -28,7 +29,7 @@ class Node {
     if(key >= this.key) {
       this.numRightChildren++;
       if(this.right === null) {
-        this.right = new Node(key, this);
+        this.right = new Node(key, key, this);
       }else {
         this.right.insert(key);
       }
@@ -133,6 +134,7 @@ class Node {
     if(this.numRightChildren > 0)this.height = Math.max(this.height, 1 + this.right.height);
   }
 
+  //in order traversal of the nodes
   traversal () {
     var elements = [];
     if(this.left !== null) elements.push(...this.left.traversal());
@@ -140,6 +142,30 @@ class Node {
     if(this.right !== null) elements.push(...this.right.traversal());
 
     return elements;
+  }
+
+  //traversal by each level from the root to the leaves
+  levelTraversal () {
+    let elements = [];
+    let agenda = [this];
+    while(agenda.length > 0) {
+      let curElem = agenda.shift();
+      elements.push(curElem);
+      if(curElem.left !== null) {agenda.push(curElem.left);}
+      if(curElem.right !== null) {agenda.push(curElem.right);}
+    }
+    console.log(elements);
+    return elements;
+  }
+
+  getAncestors () {
+    let ancestors = [];
+    let curElem = this;
+    while(curElem.parent !== null) {
+      curElem = curElem.parent;
+      ancestors.push(curElem);
+    }
+    return ancestors;
   }
 
   find (key) {
