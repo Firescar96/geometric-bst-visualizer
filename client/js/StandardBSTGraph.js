@@ -2,35 +2,30 @@ import React from 'react';
 import { connect } from 'react-redux';
 import Node from './StandardBSTNode';
 import {store} from './main.js';
+import {Point} from './GeometricBST';
 const NODE_RADIUS = 10;
-const ADD_ROOT = 'ADD ROOT';
-
-function addRoot (newElement) {
-  return { type: ADD_ROOT, newElement };
-}
+const ADD_POINT = 'ADD POINT';
+const INSERT_NODE = 'INSERT NODE';
+const CLEAR_POINTS = 'CLEAR POINTS';
 
 function standardBSTReducer (state, action) {
   if(state === undefined) {
     return {
       root: null,
-      numElements: 0,
     };
   }
 
   switch (action.type) {
-    case ADD_ROOT:
+    case INSERT_NODE:
+      let newElement = isNaN(action.newElement) ?
+        parseInt(action.newElement.split('').map(x => x.charCodeAt(0)).reduce((x, y) => x + y, '')) :
+        parseFloat(action.newElement);
       if(state.root === null) {
         return {
-          root: new Node(action.newElement),
-          numElements: ++state.numElements,
-          newElement: action.newElement,
+          root: new Node(newElement),
         };
       }
-      state.root.insert(action.newElement);
-      return Object.assign({}, state, {
-        numElements: ++state.numElements,
-        newElement: action.newElement,
-      });
+      state.root.insert(newElement);
     default:
       return state;
   }
@@ -45,6 +40,7 @@ class StandardBSTGraph extends React.Component {
     };
     this.insertElement = this.insertElement.bind(this);
     this.changeElement = this.changeElement.bind(this);
+    this.makeGeometricBST = this.makeGeometricBST.bind(this);
   }
   changeElement (event) {
     this.setState({newElement: event.target.value});
@@ -53,12 +49,24 @@ class StandardBSTGraph extends React.Component {
     let newElement = this.state.newElement;
 
     event.preventDefault();
-    store.dispatch(addRoot(newElement));
-    this.setState({newElement: ''}, () => {
-      this.update();
+    store.dispatch({ type: INSERT_NODE, newElement });
+    this.setState({newElement: ''});
+  }
+  makeGeometricBST () {
+    store.dispatch({type: CLEAR_POINTS});
+    let nodes = this.props.root.levelTraversal();
+    nodes.forEach((node, i) => {
+      let point = new Point(node.key, node.value, i + 1);
+      console.log(point);
+      store.dispatch({type: ADD_POINT, point});
+      node.getAncestors().forEach(ancestor => {
+        console.log(ancestor);
+        point = new Point(ancestor.key, ancestor.value, i + 1);
+        point.isSatisfier = true;
+        store.dispatch({type: ADD_POINT, point});
+      });
     });
   }
-
   render () {
     return (
       <div>
@@ -67,7 +75,7 @@ class StandardBSTGraph extends React.Component {
           <input value={this.state.newElement} onChange={this.changeElement}></input>
           <button type="submit">Insert</button>
         </form>
-        <button>Make Geometric BST</button>
+        <button onClick={this.makeGeometricBST}>Make Geometric BST</button>
         <svg id="standard" className="graph">
           <g id="links"></g>
           <g id="nodes"></g>
@@ -86,7 +94,7 @@ class StandardBSTGraph extends React.Component {
           .ease(v => d3.easeSinIn(v))
           .duration(100)
           .attr('x', (d) => {
-            if(d.parent !== undefined && d.parent.x !== undefined) {
+            if(d.parent !== null && d.parent.x !== null) {
               let delta = NODE_RADIUS;
               delta *= Math.pow(2, d.parent.height);
               d.x = d == d.parent.left ? d.parent.x - delta : d.parent.x + delta;
@@ -94,7 +102,7 @@ class StandardBSTGraph extends React.Component {
             return d.x;
           })
           .attr('y', (d) => {
-            if(d.parent !== undefined && d.parent.y !== undefined) {
+            if(d.parent !== null && d.parent.y !== null) {
               d.y = d.parent.y + 50;
             }
             return d.y;
@@ -116,10 +124,10 @@ class StandardBSTGraph extends React.Component {
           .attr('x2', d => d.target.x + NODE_RADIUS * 2)
           .attr('y2', d => d.target.y + NODE_RADIUS * 2);
       });
-    this.update();
+    this.componentDidUpdate();
   }
 
-  update () {
+  componentDidUpdate () {
     if(this.props.root === null)return;
 
     let standard = d3.select('#standard');
@@ -139,7 +147,6 @@ class StandardBSTGraph extends React.Component {
 
     let linkList = linkChildren(this.props.root);
     let link = standard.select('#links').selectAll('line.link').data(linkList, d => {
-      console.log(d.target);
       return d.target.id;
     });
     link
@@ -191,7 +198,7 @@ class StandardBSTGraph extends React.Component {
 
 export default connect(function (state, ownProps) {
   return {
-    root: state.root,
+    root: state.standardBST.root,
   };
 })(StandardBSTGraph);
 
