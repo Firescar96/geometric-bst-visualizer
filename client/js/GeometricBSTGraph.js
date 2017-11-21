@@ -1,13 +1,11 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import BST from './GeometricBST';
+import Node from './StandardBSTNode';
 import {store} from './main';
 import MinHeap from './MinHeap';
-const ADD_POINT = 'ADD POINT';
-const INSERT_NODE = 'INSERT NODE';
-const CLEAR_NODE = 'CLEAR NODE';
-const CLEAR_POINTS = 'CLEAR POINTS';
-window.MinHeap = MinHeap;
+import {ADD_POINT, SET_ROOT, INSERT_NODE, CLEAR_NODE, CLEAR_POINTS} from './constants';
+
 function geometricBSTReducer (state, action) {
   if(state === undefined) {
     return {
@@ -65,7 +63,48 @@ class GeometricBSTGraph extends React.Component {
     this.addPoint(this.state.newElement);
   }
   makeStandardBst () {
-    console.log(MinHeap);
+    //this is a prerequisite
+    this.runGreedyAlgorithm();
+    //create a min heap on the points
+    let heap = new MinHeap('time');
+    this.props.bst.points.forEach(point => {
+      heap.insert(point);
+    });
+
+    let rootPoint = heap.pop();
+    let sbst = new Node(rootPoint.key, rootPoint.value);
+    while(heap.hasNext() > 0) {
+      //get all the touchedPoints for a particular access time
+      let parentNode = sbst;
+      let accessTime = heap.peek().time;
+      let touchedPoints = [];
+      let insertedPoint = null;
+      while(heap.peek() !== undefined && heap.peek().time === accessTime) {
+        let point = heap.pop();
+        if(point.isSatisfier) {
+          touchedPoints.push(point.key);
+        }else {
+          insertedPoint = point;
+        }
+      }
+
+      //use the touchedPoints to figure out where to insert the insertedPoint
+      let isDescending = true;
+      let descend = (node) => {
+        if(node === undefined)return;
+        let touchedIndex = touchedPoints.indexOf(node.key);
+        if(touchedIndex == -1)return false;
+        touchedPoints = touchedPoints.splice(touchedIndex);
+        parentNode = node;
+        //return true if found
+      };
+      while(isDescending) {
+        isDescending = descend(parent.left) || descend(parent.right) || false;
+      }
+      parentNode.insert(insertedPoint.key, insertedPoint.value, false);
+    }
+
+    store.dispatch({type: SET_ROOT, root: sbst});
   }
   runGreedyAlgorithm () {
     let points = this.props.bst.points;

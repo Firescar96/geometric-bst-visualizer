@@ -27,7 +27,7 @@ class GemetricBST {
   //takes an optional parameter for what subset of times (0 - maxTime) to look at
   runGreedyAlgorithm (maxTime) {
     this.points.sort((a, b) => a.time < b.time ? -1 : 1);
-    if(maxTime === null) {
+    if(maxTime === undefined) {
       //iterate over the points from the bottom up
       for(var time = 1; time <= this.maxTime; time++) {
         this.satisfyLevel(time);
@@ -65,18 +65,18 @@ class GemetricBST {
 
     let satisfy = (unsatisfiedPoint, levelPoint) => {
       if(unsatisfiedPoint === null)return;
-
       //this checks if there are satisfying points along the bottom segment of the
       //satisfiability box
       let rangeMin = Math.min(unsatisfiedPoint.value, levelPoint.value);
       let rangeMax = Math.max(unsatisfiedPoint.value, levelPoint.value);
       let valueSetsKeys = Object.keys(valueSets);
-      for(let i = 0; i < valueSetsKeys.length; i++) {
-        if(i < rangeMin)continue;
-        if(i > rangeMax)break;
-        if(i == unsatisfiedPoint.value)continue;
-        if(!valueSets[i])continue;
-        if(valueSets[i].includes(unsatisfiedPoint.time))return;
+      for(let valueSetIdx = 0; valueSetIdx < valueSetsKeys.length; valueSetIdx++) {
+        let valueSetVal = valueSetsKeys[valueSetIdx];
+        if(valueSetVal < rangeMin)continue;
+        if(valueSetVal > rangeMax)break;
+        if(valueSetVal == unsatisfiedPoint.value)continue;
+        if(!valueSets[valueSetVal])continue;
+        if(valueSets[valueSetVal].includes(unsatisfiedPoint.time))return;
       }
       //this checks if there are satisfying points along the top segment of the
       //satisfiability box
@@ -96,9 +96,8 @@ class GemetricBST {
       maxSubset = maxSubset.filter(x => x.value !== satisfier.value);
       satisfiedPoints.push({base: unsatisfiedPoint, satisfied: levelPoint});
     };
-    let count = 0;
-    while(agenda.length > 0 && count < 5) {
-      count++;
+
+    while(agenda.length > 0) {
       let levelPoint = agenda.pop();
       //this checks for satisfiability along the vertical segment below the levelPoint
       //by definition of max subset there are no points above each of these

@@ -16,11 +16,12 @@ class Node {
   }
 
   //inserts a key and rebalances
-  insert (key) {
+  insert (key, value, rebalance = true) {
+    value = value || key;
     if(key < this.key) {
       this.numLeftChildren++;
       if(this.left === null) {
-        this.left = new Node(key, key, this);
+        this.left = new Node(key, value, this);
       }else {
         this.left.insert(key);
       }
@@ -29,14 +30,16 @@ class Node {
     if(key >= this.key) {
       this.numRightChildren++;
       if(this.right === null) {
-        this.right = new Node(key, key, this);
+        this.right = new Node(key, value, this);
       }else {
         this.right.insert(key);
       }
       this.height = Math.max(this.height, 1 + this.right.height);
     }
 
-    this.rebalance();
+    if(rebalance) {
+      this.rebalance();
+    }
   }
 
   //this is done a little strangely so that the pointer to the root node never
