@@ -7667,9 +7667,23 @@ var GeometricBSTGraph = function (_React$Component) {
           isDescending = descend(parent.left) || descend(parent.right) || false;
         }
         parentNode.insert(insertedPoint.key, insertedPoint.value, false);
+        for (i = 0; i < heap.queue.length; i++) {
+          if (heap.queue[i].value == parentNode.value) {
+            break;
+          }
+          if (heap.queue[i].value == insertedPoint.value) {
+            if (parentNode.key < insertedPoint.key) {
+              parentNode.rotateLeft();
+            } else {
+              parentNode.rotateRight();
+            }
+          }
+        }
       };
 
       while (heap.hasNext() > 0) {
+        var i;
+
         _loop();
       }
 
