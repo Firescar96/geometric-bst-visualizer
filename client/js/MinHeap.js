@@ -1,22 +1,27 @@
 class MinHeap {
   constructor (criteria) {
     this.criteria = criteria;
-    this.length = 0;
     this.queue = [];
+    window.heap = this;
+  }
+  hasNext () {
+    return this.queue.length > 0;
   }
   insert (value) {
     this.queue.push(value);
-    this.length++;
-    this.bubbleUp(this.length - 1);
+    console.log('bubble up', value);
+    this.bubbleUp(this.queue.length - 1);
+    //if(this.queue.length > 1 && )
   }
   peek () {
     return this.queue[0];
   }
   pop () {
+    console.log(this.queue.map(x => x));
     var oldRoot = this.queue[0];
-    var newRoot = this.queue.pop();
-    this.length--;
-    this.queue[0] = newRoot;
+    this.queue[0] =  this.queue[this.queue.length - 1];
+    this.queue[this.queue.length - 1] = oldRoot;
+    this.queue.pop();
     this._fixHeap(0);
     return oldRoot;
   }
@@ -25,7 +30,9 @@ class MinHeap {
       return;
     }
     var parent = this.getParentIndex(index);
+    console.log('parent', parent, index, this.evaluate(index, parent));
     if(this.evaluate(index, parent)) {
+      console.log('swapping', parent, index);
       this.swap(index, parent);
       this.bubbleUp(parent);
     }else {
@@ -39,13 +46,10 @@ class MinHeap {
     if(this.evaluate(left, value)) {
       this.swap(value, left);
       this._fixHeap(left);
-    }else if(this.evaluate(right, value)) {
+    }
+    if(this.evaluate(right, value)) {
       this.swap(value, right);
       this._fixHeap(right);
-    }else if(value === 0) {
-      return;
-    }else {
-      this._fixHeap(0);
     }
   }
   swap (self, target) {
@@ -54,7 +58,7 @@ class MinHeap {
     this.queue[target] = placeHolder;
   }
   evaluate (self, target) {
-    if(this.queue[target] === null || this.queue[self] === null) {
+    if(this.queue[target] === undefined || this.queue[self] === undefined) {
       return false;
     }
     return (this.queue[self][this.criteria] < this.queue[target][this.criteria]);

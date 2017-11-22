@@ -1,0 +1,11 @@
+-need visualization of creating the gbst from sbst, node by node construction
+-previously inserted elements just touch that node instead of inserting
+-show via (green?) dots the touched nodes in the gbst upon insert in sbst
+  -show each node one at a time appearing as i step through the sbst
+-needs labels for each side sbst and gbst
+-labels for the gbst graph
+-allows user to input satisfier (red) dots and show what tree that corresponds to
+-include a couple demo sequences (helps for demos)
+-manually step through the conversion from gbst to sbst
+-show which nodes correspond to which by clicking and highlighting
+-clean up axes to remove excess points

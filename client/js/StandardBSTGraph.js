@@ -4,9 +4,7 @@ import Node from './StandardBSTNode';
 import {store} from './main.js';
 import {Point} from './GeometricBST';
 const NODE_RADIUS = 10;
-const ADD_POINT = 'ADD POINT';
-const INSERT_NODE = 'INSERT NODE';
-const CLEAR_POINTS = 'CLEAR POINTS';
+import {ADD_POINT, INSERT_NODE, SET_ROOT, CLEAR_POINTS} from './constants';
 
 function standardBSTReducer (state, action) {
   if(state === undefined) {
@@ -16,14 +14,18 @@ function standardBSTReducer (state, action) {
   }
 
   switch (action.type) {
+    case SET_ROOT:
+      return Object.assign({}, state, {
+        root: action.root,
+      });
     case INSERT_NODE:
       let newElement = isNaN(action.newElement) ?
         parseInt(action.newElement.split('').map(x => x.charCodeAt(0)).reduce((x, y) => x + y, '')) :
         parseFloat(action.newElement);
       if(state.root === null) {
-        return {
+        return Object.assign({}, state, {
           root: new Node(newElement),
-        };
+        });
       }
       state.root.insert(newElement);
     default:
@@ -57,10 +59,8 @@ class StandardBSTGraph extends React.Component {
     let nodes = this.props.root.levelTraversal();
     nodes.forEach((node, i) => {
       let point = new Point(node.key, node.value, i + 1);
-      console.log(point);
       store.dispatch({type: ADD_POINT, point});
       node.getAncestors().forEach(ancestor => {
-        console.log(ancestor);
         point = new Point(ancestor.key, ancestor.value, i + 1);
         point.isSatisfier = true;
         store.dispatch({type: ADD_POINT, point});
