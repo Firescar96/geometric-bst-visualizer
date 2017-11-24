@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import *as d3 from 'd3';
 import Node from './StandardBSTNode';
 import {store} from './main.js';
 import {Point} from './GeometricBST';
