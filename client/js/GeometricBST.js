@@ -47,53 +47,53 @@ class GemetricBST {
     //for efficiency reasons we only need to compare to a value once, even if it has been
     //touched in multiple timesteps
     for(var i = subset.length - 1; i >= 0; i--) {
-      if(!maxSubset[subset[i].value] || subset[i].value > maxSubset[subset[i].value]) {
-        maxSubset[subset[i].value] = subset[i];
+      if(!maxSubset[subset[i].key] || subset[i].key > maxSubset[subset[i].key]) {
+        maxSubset[subset[i].key] = subset[i];
       }
-      if(!valueSets[subset[i].value]) {
-        valueSets[subset[i].value] = [subset[i].time];
+      if(!valueSets[subset[i].key]) {
+        valueSets[subset[i].key] = [subset[i].time];
       }else {
-        valueSets[subset[i].value].push(subset[i].time);
+        valueSets[subset[i].key].push(subset[i].time);
       }
     }
     maxSubset = Object.keys(maxSubset).map(x => maxSubset[x]).filter(x => x.time < time);
 
     //for the given time get the touched points that need satisfaction and satisfy them
     let agenda = subset.filter(x => x.time == time);
-    let levelValues = agenda.map(x => x.value);
+    let levelValues = agenda.map(x => x.key);
     let satisfiedPoints = [];
 
     let satisfy = (unsatisfiedPoint, levelPoint) => {
       if(unsatisfiedPoint === null)return;
       //this checks if there are satisfying points along the bottom segment of the
       //satisfiability box
-      let rangeMin = Math.min(unsatisfiedPoint.value, levelPoint.value);
-      let rangeMax = Math.max(unsatisfiedPoint.value, levelPoint.value);
+      let rangeMin = Math.min(unsatisfiedPoint.key, levelPoint.key);
+      let rangeMax = Math.max(unsatisfiedPoint.key, levelPoint.key);
       let valueSetsKeys = Object.keys(valueSets);
       for(let valueSetIdx = 0; valueSetIdx < valueSetsKeys.length; valueSetIdx++) {
         let valueSetVal = valueSetsKeys[valueSetIdx];
         if(valueSetVal < rangeMin)continue;
         if(valueSetVal > rangeMax)break;
-        if(valueSetVal == unsatisfiedPoint.value)continue;
+        if(valueSetVal == unsatisfiedPoint.key)continue;
         if(!valueSets[valueSetVal])continue;
         if(valueSets[valueSetVal].includes(unsatisfiedPoint.time))return;
       }
       //this checks if there are satisfying points along the top segment of the
       //satisfiability box
       let isTopSatisfied;
-      if(unsatisfiedPoint.value < levelPoint.value) {
+      if(unsatisfiedPoint.key < levelPoint.key) {
         isTopSatisfied = levelValues.filter(x => x < rangeMax && x >= rangeMin).length > 0;
       }else {
         isTopSatisfied = levelValues.filter(x => x <= rangeMax && x > rangeMin).length > 0;
       }
       if(isTopSatisfied)return;
 
-      let satisfier = new Point(unsatisfiedPoint.key, unsatisfiedPoint.value, levelPoint.time, true);
+      let satisfier = new Point(unsatisfiedPoint.key, unsatisfiedPoint.key, levelPoint.time, true);
       this.points.push(satisfier);
       agenda.push(satisfier);
-      levelValues.push(satisfier.value);
-      valueSets[satisfier.value].push(satisfier.time);
-      maxSubset = maxSubset.filter(x => x.value !== satisfier.value);
+      levelValues.push(satisfier.key);
+      valueSets[satisfier.key].push(satisfier.time);
+      maxSubset = maxSubset.filter(x => x.key !== satisfier.key);
       satisfiedPoints.push({base: unsatisfiedPoint, satisfied: levelPoint});
     };
 
@@ -102,17 +102,17 @@ class GemetricBST {
       //this checks for satisfiability along the vertical segment below the levelPoint
       //by definition of max subset there are no points above each of these
       //so we don't have to check the other vertical segment
-      let unsatisfiedPoints = maxSubset.filter(x => !valueSets[levelPoint.value].includes(x.time));
+      let unsatisfiedPoints = maxSubset.filter(x => !valueSets[levelPoint.key].includes(x.time));
       let minmax = null;
       let maxmin = null;
       for(let unsatIndex = 0; unsatIndex < unsatisfiedPoints.length; unsatIndex++) {
         let unsatPoint = unsatisfiedPoints[unsatIndex];
-        if(unsatPoint.value > levelPoint.value &&
-          (minmax === null || unsatPoint.value < minmax.value)) {
+        if(unsatPoint.key > levelPoint.key &&
+          (minmax === null || unsatPoint.key < minmax.key)) {
           minmax = unsatPoint;
         }
-        if(unsatPoint.value < levelPoint.value  &&
-          (maxmin === null || unsatPoint.value > maxmin.value)) {
+        if(unsatPoint.key < levelPoint.key  &&
+          (maxmin === null || unsatPoint.key > maxmin.key)) {
           maxmin = unsatPoint;
         }
       }

@@ -16,23 +16,26 @@ class Node {
   }
 
   //inserts a key and rebalances
+  //returns number of new children
   insert (key, value, rebalance = true) {
     value = value || key;
+    if(key == this.key)return 0;
+
     if(key < this.key) {
-      this.numLeftChildren++;
       if(this.left === null) {
+        this.numLeftChildren++;
         this.left = new Node(key, value, this);
       }else {
-        this.left.insert(key);
+        this.numLeftChildren += this.left.insert(key, value, rebalance);
       }
       this.height = Math.max(this.height, 1 + this.left.height);
     }
     if(key >= this.key) {
-      this.numRightChildren++;
       if(this.right === null) {
+        this.numRightChildren++;
         this.right = new Node(key, value, this);
       }else {
-        this.right.insert(key);
+        this.numRightChildren += this.right.insert(key, value, rebalance);
       }
       this.height = Math.max(this.height, 1 + this.right.height);
     }
@@ -40,6 +43,7 @@ class Node {
     if(rebalance) {
       this.rebalance();
     }
+    return 1;
   }
 
   //this is done a little strangely so that the pointer to the root node never
@@ -90,6 +94,9 @@ class Node {
     var temp = this.key;
     this.key = rightNode.key;
     rightNode.key = temp;
+    temp = this.value;
+    this.value = rightNode.value;
+    rightNode.value = temp;
 
     this.right = rightNode.right;
     this.numRightChildren -= rightNode.numLeftChildren + 1;
@@ -119,6 +126,9 @@ class Node {
     var temp = this.key;
     this.key = leftNode.key;
     leftNode.key = temp;
+    temp = this.value;
+    this.value = leftNode.value;
+    leftNode.value = temp;
 
     this.left = leftNode.left;
     this.numLeftChildren -= leftNode.numRightChildren + 1;

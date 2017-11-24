@@ -4,31 +4,33 @@ import BST from './GeometricBST';
 import Node from './StandardBSTNode';
 import {store} from './main';
 import MinHeap from './MinHeap';
-import {ADD_POINT, SET_ROOT, INSERT_NODE, CLEAR_NODE, CLEAR_POINTS} from './constants';
+import {ADD_POINT, SET_ROOT, CLEAR_POINTS} from './constants';
 
 function geometricBSTReducer (state, action) {
   if(state === undefined) {
     return {
-      newElement: null,
-      bst: new BST(),
+      root: new BST(),
+      nonce: 0,
     };
   }
 
   switch (action.type) {
-    case INSERT_NODE:
-      return Object.assign({}, state, {
-        newElement: action.newElement,
-      });
-    case CLEAR_NODE:
-      return Object.assign({}, state, {
-        newElement: null,
-      });
     case ADD_POINT:
-      state.bst.insert(action.point);
-      return state;
+      if(action.point !== undefined) {
+        state.root.insert(action.point);
+      }else if(action.newElement !== undefined) {
+        let newElement = isNaN(action.newElement) ?
+          parseInt(action.newElement.split('').map(x => x.charCodeAt(0)).reduce((x, y) => x + y, '')) :
+          parseFloat(action.newElement);
+        state.root.insert(newElement, action.newElement);
+      }
+      return Object.assign({}, state, {
+        nonce: ++state.nonce,
+      });
     case CLEAR_POINTS:
       return Object.assign({}, state, {
-        bst: new BST(),
+        root: new BST(),
+        nonce: ++state.nonce,
       });
     default:
       return state;
@@ -36,41 +38,19 @@ function geometricBSTReducer (state, action) {
 }
 
 class GeometricBSTGraph extends React.Component {
-  constructor () {
-    super();
-    this.state = {
-      newElement: '',
-    };
-    this.insertElement = this.insertElement.bind(this);
-    this.changeElement = this.changeElement.bind(this);
+  constructor (props) {
+    super(props);
     this.runGreedyAlgorithm = this.runGreedyAlgorithm.bind(this);
     this.makeStandardBst = this.makeStandardBst.bind(this);
-  }
-  addPoint (_newElement) {
-    let newElement = isNaN(_newElement) ?
-      parseInt(_newElement.split('').map(x => x.charCodeAt(0)).reduce((x, y) => x + y, '')) :
-      parseFloat(_newElement);
-    this.props.bst.insert(newElement, _newElement);
-    this.setState({
-      newElement: '',
-    });
-  }
-  changeElement (event) {
-    this.setState({newElement: event.target.value});
-  }
-  insertElement (event) {
-    event.preventDefault();
-    this.addPoint(this.state.newElement);
   }
   makeStandardBst () {
     //this is a prerequisite
     this.runGreedyAlgorithm();
     //create a min heap on the points
     let heap = new MinHeap('time');
-    this.props.bst.points.forEach(point => {
+    this.props.root.points.forEach(point => {
       heap.insert(point);
     });
-
     let rootPoint = heap.pop();
     let sbst = new Node(rootPoint.key, rootPoint.value);
     while(heap.hasNext() > 0) {
@@ -103,15 +83,16 @@ class GeometricBSTGraph extends React.Component {
       }
       parentNode.insert(insertedPoint.key, insertedPoint.value, false);
       for(var i = 0; i < heap.queue.length; i++) {
-        if(heap.queue[i].value == parentNode.value) {
+        if(heap.queue[i].key == parentNode.key) {
           break;
         }
-        if(heap.queue[i].value == insertedPoint.value) {
+        if(heap.queue[i].key == insertedPoint.key) {
           if(parentNode.key < insertedPoint.key) {
             parentNode.rotateLeft();
-          }else {
+          }else if(parentNode.key > insertedPoint.key) {
             parentNode.rotateRight();
           }
+          break;
         }
       }
     }
@@ -119,21 +100,21 @@ class GeometricBSTGraph extends React.Component {
     store.dispatch({type: SET_ROOT, root: sbst});
   }
   runGreedyAlgorithm () {
-    let points = this.props.bst.points;
+    let points = this.props.root.points;
     let geometric = d3.select('#geometric');
     let width = geometric.node().getBoundingClientRect().width;
     let widthMargin = width / 10;
     let height = geometric.node().getBoundingClientRect().height;
     let heightMargin = height / 3;
 
-    let xRange = d3.scaleLinear().range([widthMargin, width - widthMargin])
-      .domain([d3.min(points, d => d.key) - 1, d3.max(points, d => d.key) + 1]);
+    let xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
+      .domain(points.map(x => (x.key)));
 
     let yRange = d3.scaleLinear().range([heightMargin, height - heightMargin])
       .domain([d3.max(points, d => d.time) + 1, d3.min(points, d => d.time) - 1]);
 
-    for(var time = 1; time <= this.props.bst.maxTime; time++) {
-      let satisfiedPoints = this.props.bst.runGreedyAlgorithm(time);
+    for(var time = 1; time <= this.props.root.maxTime; time++) {
+      let satisfiedPoints = this.props.root.runGreedyAlgorithm(time);
       let satisfyRect = geometric.selectAll('rect.satisfier')
         .data(satisfiedPoints);
       satisfyRect.enter()
@@ -159,22 +140,12 @@ class GeometricBSTGraph extends React.Component {
         .transition()
         .delay(100)
         .remove();
-
-      satisfyRect.exit();
     }
     this.componentDidUpdate();
-  }
-  clear () {
-    this.setState({bst: new BST()});
   }
   render () {
     return (
       <div>
-        <form onSubmit={this.insertElement}>
-          Insert an element
-          <input value={this.state.newElement} onChange={this.changeElement}></input>
-          <button type="submit">Insert</button>
-        </form>
         <button type="button" onClick={this.runGreedyAlgorithm}>Run Greedy Algorithm</button>
         <button onClick={this.makeStandardBst}>Make Standard BST</button>
         <svg id="geometric" className="graph"></svg>
@@ -182,26 +153,27 @@ class GeometricBSTGraph extends React.Component {
     );
   }
   componentDidUpdate () {
-    if(this.props.newElement !== null) {
-      this.addPoint(this.props.newElement);
-      store.dispatch({type: CLEAR_NODE, newElement: null});
-    }
-    let points = this.props.bst.points;
-    let nnSatisfierPoints = this.props.bst.points.filter(x => !x.isSatisfier);
+    let points = this.props.root.points.sort((a, b) => {
+      if(isNaN(a.key)) {
+        return a.key.localeCompare(b.key);
+      }else if(isNaN(b.key)) {
+        return -1 * b.key.localeCompare(a.key);
+      }
+      return a.key <= b.key ? -1 : 1;
+    });
     let geometric = d3.select('#geometric');
     let width = geometric.node().getBoundingClientRect().width;
     let widthMargin = width / 10;
     let height = geometric.node().getBoundingClientRect().height;
     let heightMargin = height / 3;
 
-    let xRange = d3.scaleLinear().range([widthMargin, width - widthMargin])
-      .domain([d3.min(points, d => d.key) - 1, d3.max(points, d => d.key) + 1]);
-
+    let xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
+      .domain(points.map(x => (x.key)));
     let yRange = d3.scaleLinear().range([heightMargin, height - heightMargin])
       .domain([d3.max(points, d => d.time) + 1, d3.min(points, d => d.time) - 1]);
 
     let xAxis = d3.axisBottom(xRange)
-      .ticks(nnSatisfierPoints.length);
+      .tickFormat((d, i) => points[i].value);
     let yAxis = d3.axisLeft(yRange);
 
     //geometric.remove('g.xAxis');
@@ -220,6 +192,7 @@ class GeometricBSTGraph extends React.Component {
       .attr('cx', d => xRange(d.key))
       .attr('cy', d => yRange(d.time))
       .attr('r', 5)
+      .attr('stroke', 'none')
       .attr('opacity', d => d.isSatisfier ? 0 : 1)
       .transition()
       .duration(200)
@@ -237,7 +210,7 @@ class GeometricBSTGraph extends React.Component {
     geometric.selectAll('rect.satisfier')
       .attr('transform', d => {
         let satisfiedWidth = Math.abs(xRange(d.base.key) - xRange(d.satisfied.key));
-        let satisfiedHeight = Math.abs(xRange(d.base.time) - xRange(d.satisfied.time));
+        let satisfiedHeight = Math.abs(yRange(d.base.time) - yRange(d.satisfied.time));
         if(d.satisfied.key < d.base.key) {
           return 'translate(' + -satisfiedWidth
            + ',' + -satisfiedHeight + ')';
@@ -260,21 +233,41 @@ class GeometricBSTGraph extends React.Component {
 
     geometric.append('g')
       .attr('class', 'xAxis')
-      .attr('stroke', 'white')
       .attr('transform', 'translate(0,' + (height - heightMargin) + ')');
 
     geometric.append('g')
       .attr('class', 'yAxis')
-      .attr('stroke', 'white')
       .attr('transform', 'translate(' + (widthMargin) + ',0)');
+
+    let yLabelX = widthMargin - 40;
+    let yLabelY = height / 2;
+    geometric.append('text')
+      .attr('x', yLabelX)
+      .attr('y', yLabelY)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', 20)
+      .attr('letter-spacing', 1.5)
+      .attr('stroke', 'white')
+      .attr('fill', 'white')
+      .attr('transform', 'rotate(-90 , ' + yLabelX + ',' + yLabelY + ')')
+      .text('insert time');
+
+    geometric.append('text')
+      .attr('x', width / 2)
+      .attr('y', height - heightMargin + 40)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', 20)
+      .attr('letter-spacing', 1.5)
+      .attr('stroke', 'white')
+      .attr('fill', 'white')
+      .text('value');
   }
 }
 
 export default connect(function (state, ownProps) {
   return {
-    root: state.standardBST.root,
-    newElement: state.geometricBST.newElement,
-    bst: state.geometricBST.bst,
+    root: state.geometricBST.root,
+    nonce: state.geometricBST.nonce,
   };
 })(GeometricBSTGraph);
 

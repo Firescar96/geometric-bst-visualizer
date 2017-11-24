@@ -1,18 +1,104 @@
+#standardBSTGraph span.label {
+  padding: 10px; }
 html, body {
   width: auto;
   height: 100%;
   background-color: #282828;
   color: white; }
 
+h1 {
+  color: #eee;
+  font: 30px Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-shadow: 0px 1px black;
+  text-align: center;
+  margin-bottom: 50px; }
+
 main, #root {
   width: 100%;
-  height: 100%; }
-  main > div, #root > div {
-    width: 50%;
-    height: 100%;
-    display: inline-block; }
-  main .graph, #root .graph {
-    width: 100%;
-    height: 100%; }
-    main .graph .tick, main .graph .domain, #root .graph .tick, #root .graph .domain {
-      stroke: white; }
+  height: 100%;
+  display: flex;
+  flex-direction: column; }
+  main #graphTitles, #root #graphTitles {
+    display: block;
+    height: 50px; }
+    main #graphTitles div, #root #graphTitles div {
+      display: flex;
+      height: 100%; }
+      main #graphTitles div h2, #root #graphTitles div h2 {
+        margin: auto; }
+  main #graphs, #root #graphs {
+    flex: 1; }
+    main #graphs > div, #root #graphs > div {
+      width: 50%;
+      float: left;
+      height: 100%; }
+      main #graphs > div svg, #root #graphs > div svg {
+        width: 100%;
+        height: 100%; }
+        main #graphs > div svg .domain, main #graphs > div svg .tick, #root #graphs > div svg .domain, #root #graphs > div svg .tick {
+          stroke: #fff; }
+  main #inserts, #root #inserts {
+    display: flex;
+    justify-content: flex-start; }
+    main #inserts div, #root #inserts div {
+      margin-top: auto;
+      margin-bottom: auto;
+      padding: 10px; }
+  main label.toggle, #root label.toggle {
+    width: 80px;
+    height: 30px;
+    margin-top: auto;
+    margin-bottom: auto;
+    background: #5d5d5d;
+    display: inline-block;
+    -webkit-border-radius: 50px;
+    -moz-border-radius: 50px;
+    border-radius: 50px;
+    position: relative; }
+    main label.toggle:after, #root label.toggle:after {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      height: 2px;
+      width: 52px;
+      -webkit-border-radius: 50px;
+      -moz-border-radius: 50px;
+      border-radius: 50px;
+      background: #707070; }
+    main label.toggle input[type=checkbox], #root label.toggle input[type=checkbox] {
+      visibility: hidden; }
+    main label.toggle input[type=checkbox]:checked + span, #root label.toggle input[type=checkbox]:checked + span {
+      left: 54px; }
+      main label.toggle input[type=checkbox]:checked + span:after, #root label.toggle input[type=checkbox]:checked + span:after {
+        background: #00bf00; }
+    main label.toggle span, #root label.toggle span {
+      display: block;
+      width: 22px;
+      height: 22px;
+      -webkit-border-radius: 50px;
+      -moz-border-radius: 50px;
+      border-radius: 50px;
+      -webkit-transition: all .4s ease;
+      -moz-transition: all .4s ease;
+      -o-transition: all .4s ease;
+      -ms-transition: all .4s ease;
+      transition: all .4s ease;
+      cursor: pointer;
+      position: absolute;
+      top: 4px;
+      z-index: 1;
+      left: 4px;
+      background: #fcfff4; }
+      main label.toggle span:after, #root label.toggle span:after {
+        content: '';
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 50px;
+        -moz-border-radius: 50px;
+        border-radius: 50px;
+        background: #333;
+        left: 6px;
+        top: 6px; }
