@@ -54,7 +54,16 @@ class vEBGraph extends React.Component {
 
   makevEBTree () {
     store.dispatch({type: CLEAR_POINTS});
-    // figure out how this works TODO
+    let nodes = null; // TODO: make this actually something
+    nodes.forEach((node, i) => {
+      let point = new Point(node.key, node.value, i+1);
+      store.dispatch({type: ADD_POINT, point});
+      node.getAncestors().forEach(ancestor => {
+        point = new Point(ancestor.key, ancestor.value, i+1);
+        point.isSatisfier = true;
+        store.dispatch({type: ADD_POINT, point});
+      });
+    });
   }
 
   render () {
@@ -75,11 +84,114 @@ class vEBGraph extends React.Component {
   }
 
   componentDidMount () {
-    // TODO
+    let standard = d3.select('#standard');
+    this.state.simulation
+      .force('collision', d3.forceCollide().radius(NODE_RADIUS + 5))
+      .force('manyBody', d3.forceManyBody().strength(1))
+      .on('tick', () => {
+        standard.selectAll('svg.node').transition()
+          .ease(v => d3.easeSinIn(v))
+          .duration(100)
+          .attr('x', (d) => {
+            if(d.parent !== null && d.parent.x !== null) {
+              let delta = NODE_RADIUS;
+              delta *= Math.pow(2, d.parent.height);
+              d.x = d == d.parent.left ? d.parent.x - delta : d.parent.x + delta;
+            }
+            return d.x;
+          })
+          .attr('y', (d) => {
+            if(d.parent !== null && d.parent.y !== null) {
+              d.y = d.parent.y + 50; // TODO: note position with relation to parents
+            }
+            return d.y;
+          });
+
+        if(this.props.root !== null) {
+          this.props.root.fx = standard.node().getBoundingClientRect().width / 2;
+          this.props.root.fy = standard.node().getBoundingClientRect().height / 3;
+        }
+
+        standard.selectAll('text.node')
+          .text((d) => d.key);
+
+        standard.selectAll('line.link').transition()
+          .duration(100)
+          .ease(v => d3.easeSinIn(v)) // TODO: note animations here
+          .attr('x1', d => d.source.x + NODE_RADIUS * 2)
+          .attr('y1', d => d.source.y + NODE_RADIUS * 2)
+          .attr('x2', d => d.target.x + NODE_RADIUS * 2)
+          .attr('y2', d => d.target.y + NODE_RADIUS * 2);
+      });
+    this.componentDidUpdate();
   }
 
   componentDidUpdate () {
-    // TODO
+    if(this.props.root === null)return;
+
+    let standard = d3.select('#standard');
+
+    function linkChildren (parent) {
+      let linkList = [];
+      if(parent.left !== null) {
+        linkList.push({source: parent, target: parent.left});
+        linkList.push(...linkChildren(parent.left));
+      }
+      if(parent.right !== null) {
+        linkList.push({source: parent, target: parent.right});
+        linkList.push(...linkChildren(parent.right));
+      }
+      return linkList;
+    }
+
+    let linkList = linkChildren(this.props.root);
+    let link = standard.select('#links').selectAll('line.link').data(linkList, d => {
+      return d.target.id;
+    });
+    link
+      .enter().append('line')
+      .attr('class', 'link')
+      .attr('stroke', '#ddd')
+      .attr('stroke-width', 5);
+    link.exit().remove();
+
+    let nodes = this.props.root.traversal();
+    let node = standard.select('#nodes').selectAll('svg.node')
+      .data(nodes, d => d.id);
+
+    let nodeG = node.enter()
+      .append('svg')
+      .attr('class', 'node')
+      .attr('width', '40')
+      .attr('height', '40');
+
+    nodeG
+      .append('circle')
+      .attr('class', 'node')
+      .attr('stroke', 'white')
+      .attr('cx', '50%')
+      .attr('cy', '50%')
+      .attr('r', 20)
+      .text((d) => d.key);
+
+    nodeG.exit().remove();
+
+    nodeG
+      .append('text')
+      .attr('class', 'node')
+      .attr('fill', 'white')
+      .attr('x', '50%')
+      .attr('y', '50%')
+      .attr('text-anchor', 'middle')
+      .attr('alignment-baseline', 'middle')
+      .text((d) => d.key);
+
+    nodeG.exit().remove();
+
+    this.state.simulation.nodes(nodes)
+      .force('link', d3.forceLink(linkList).strength(0.5).distance(100))
+      .alpha(1)
+      .restart();
   }
 }
 
