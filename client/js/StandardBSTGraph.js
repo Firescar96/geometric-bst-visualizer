@@ -1,15 +1,19 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import *as d3 from 'd3';
 import Node from './StandardBSTNode';
 import {store} from './main.js';
 import {Point} from './GeometricBST';
 const NODE_RADIUS = 10;
-import {ADD_POINT, INSERT_NODE, SET_ROOT, CLEAR_POINTS} from './constants';
+import {ADD_POINT, INSERT_NODE, SET_ROOT, CLEAR_POINTS, REBALANCE} from './constants';
+require('../sass/standardBSTGraph.scss');
 
 function standardBSTReducer (state, action) {
   if(state === undefined) {
     return {
       root: null,
+      nonce: 0, //used to force an update to the DOM
+      rebalance: true, //should the bst rebalance or not
     };
   }
 
@@ -17,6 +21,7 @@ function standardBSTReducer (state, action) {
     case SET_ROOT:
       return Object.assign({}, state, {
         root: action.root,
+        nonce: ++state.nonce,
       });
     case INSERT_NODE:
       let newElement = isNaN(action.newElement) ?
@@ -24,35 +29,29 @@ function standardBSTReducer (state, action) {
         parseFloat(action.newElement);
       if(state.root === null) {
         return Object.assign({}, state, {
-          root: new Node(newElement),
+          root: new Node(newElement, action.newElement),
+          nonce: ++state.nonce,
         });
       }
-      state.root.insert(newElement);
+      state.root.insert(newElement, action.newElement, state.rebalance);
+      return Object.assign({}, state, {
+        nonce: ++state.nonce,
+      });
+    case REBALANCE:
+      return Object.assign({}, state, {
+        rebalance: action.rebalance,
+      });
     default:
       return state;
   }
 }
 
 class StandardBSTGraph extends React.Component {
-  constructor () {
-    super();
-    this.state = {
-      simulation: d3.forceSimulation(),
-      newElement: '',
-    };
-    this.insertElement = this.insertElement.bind(this);
-    this.changeElement = this.changeElement.bind(this);
+  constructor (props) {
+    super(props);
+    this.simulation = d3.forceSimulation();
     this.makeGeometricBST = this.makeGeometricBST.bind(this);
-  }
-  changeElement (event) {
-    this.setState({newElement: event.target.value});
-  }
-  insertElement (event) {
-    let newElement = this.state.newElement;
-
-    event.preventDefault();
-    store.dispatch({ type: INSERT_NODE, newElement });
-    this.setState({newElement: ''});
+    this.selectRebalance = this.selectRebalance.bind(this);
   }
   makeGeometricBST () {
     store.dispatch({type: CLEAR_POINTS});
@@ -67,15 +66,19 @@ class StandardBSTGraph extends React.Component {
       });
     });
   }
+  selectRebalance (event) {
+    store.dispatch({type: REBALANCE, rebalance: event.target.checked});
+  }
   render () {
     return (
-      <div>
-        <form onSubmit={this.insertElement}>
-          Insert an element
-          <input value={this.state.newElement} onChange={this.changeElement}></input>
-          <button type="submit">Insert</button>
-        </form>
+      <div id="standardBSTGraph">
         <button onClick={this.makeGeometricBST}>Make Geometric BST</button>
+        <span className="label">Rebalancing</span>
+        <label htmlFor="rebalance" className="toggle">
+          <input type="checkbox" value="standard" id="rebalance"
+            onChange={this.selectRebalance}  checked={this.props.rebalance}/>
+          <span></span>
+        </label>
         <svg id="standard" className="graph">
           <g id="links"></g>
           <g id="nodes"></g>
@@ -86,7 +89,7 @@ class StandardBSTGraph extends React.Component {
 
   componentDidMount () {
     let standard = d3.select('#standard');
-    this.state.simulation
+    this.simulation
       .force('collision', d3.forceCollide().radius(NODE_RADIUS + 5))
       .force('manyBody', d3.forceManyBody().strength(1))
       .on('tick', () => {
@@ -114,7 +117,7 @@ class StandardBSTGraph extends React.Component {
         }
 
         standard.selectAll('text.node')
-          .text((d) => d.key);
+          .text((d) => d.value);
 
         standard.selectAll('line.link').transition()
           .duration(100)
@@ -129,7 +132,6 @@ class StandardBSTGraph extends React.Component {
 
   componentDidUpdate () {
     if(this.props.root === null)return;
-
     let standard = d3.select('#standard');
 
     function linkChildren (parent) {
@@ -172,10 +174,7 @@ class StandardBSTGraph extends React.Component {
       .attr('stroke', 'white')
       .attr('cx', '50%')
       .attr('cy', '50%')
-      .attr('r', 20)
-      .text((d) => d.key);
-
-    nodeG.exit().remove();
+      .attr('r', 20);
 
     nodeG
       .append('text')
@@ -185,11 +184,11 @@ class StandardBSTGraph extends React.Component {
       .attr('y', '50%')
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
-      .text((d) => d.key);
+      .text((d) => d.value);
 
-    nodeG.exit().remove();
+    node.exit().remove();
 
-    this.state.simulation.nodes(nodes)
+    this.simulation.nodes(nodes)
       .force('link', d3.forceLink(linkList).strength(0.5).distance(100))
       .alpha(1)
       .restart();
@@ -199,6 +198,8 @@ class StandardBSTGraph extends React.Component {
 export default connect(function (state, ownProps) {
   return {
     root: state.standardBST.root,
+    nonce: state.standardBST.nonce,
+    rebalance: state.standardBST.rebalance,
   };
 })(StandardBSTGraph);
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import * as d3 from "d3";
 import Node from './vEBNode';
 import {store} from './main.js';
 const NODE_RADIUS = 10;
@@ -38,7 +39,7 @@ class vEBGraph extends React.Component {
     this.insertElement = this.insertElement.bind(this);
     this.changeElement = this.changeElement.bind(this);
     this.makevEBTree = this.makevEBTree.bind(this);
-  } 
+  }
 
   changeElement (event) {
     this.setState({newElement: event.target.value});
