@@ -12716,8 +12716,17 @@ var GeometricBSTGraph = function (_React$Component) {
       var height = geometric.node().getBoundingClientRect().height;
       var heightMargin = height / 3;
 
-      var xRange = d3.scalePoint().range([widthMargin, width - widthMargin]).domain(points.map(function (x) {
+      var xDomainIdxs = points.map(function (x) {
         return x.key;
+      }).map(function (x, i, a) {
+        return a.indexOf(x);
+      }).filter(function (x, i, a) {
+        return a.indexOf(x) == i;
+      });
+      var xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
+      //the domain is over all keys, pruning for duplicates
+      .domain(xDomainIdxs.map(function (x) {
+        return points[x].key;
       }));
       var yRange = d3.scaleLinear().range([heightMargin, height - heightMargin]).domain([d3.max(points, function (d) {
         return d.time;
@@ -12726,14 +12735,12 @@ var GeometricBSTGraph = function (_React$Component) {
       }) - 1]);
 
       var xAxis = d3.axisBottom(xRange).tickFormat(function (d, i) {
-        return points[i].value;
+        return points[xDomainIdxs[i]].value;
       });
       var yAxis = d3.axisLeft(yRange);
 
-      //geometric.remove('g.xAxis');
       geometric.selectAll('g.xAxis').call(xAxis);
 
-      //geometric.remove('g.yAxis');
       geometric.selectAll('g.yAxis').call(yAxis);
 
       var point = geometric.selectAll('circle.point').data(points, function (d) {
@@ -23498,14 +23505,14 @@ var Home = function (_React$Component) {
     _this.insertElement = _this.insertElement.bind(_this);
     _this.changeElement = _this.changeElement.bind(_this);
     _this.selectView = _this.selectView.bind(_this);
+    _this.insertSequence1 = _this.insertSequence1.bind(_this);
+    _this.insertSequence2 = _this.insertSequence2.bind(_this);
     return _this;
   }
 
   _createClass(Home, [{
-    key: 'insertElement',
-    value: function insertElement(event) {
-      event.preventDefault();
-      var newElement = this.state.newElement;
+    key: 'handleInsert',
+    value: function handleInsert(newElement) {
       if (newElement === '') return;
       if (this.state.standard) {
         _main.store.dispatch({ type: _constants.INSERT_NODE, newElement: newElement });
@@ -23513,6 +23520,13 @@ var Home = function (_React$Component) {
       if (this.state.geometric) {
         _main.store.dispatch({ type: _constants.ADD_POINT, newElement: newElement });
       }
+    }
+  }, {
+    key: 'insertElement',
+    value: function insertElement(event) {
+      event.preventDefault();
+      var newElement = this.state.newElement;
+      this.handleInsert(newElement);
       this.setState({ newElement: '' });
     }
   }, {
@@ -23526,6 +23540,27 @@ var Home = function (_React$Component) {
       var state = this.state;
       state[event.target.value] = event.target.checked;
       this.setState(state);
+    }
+  }, {
+    key: 'insertSequence1',
+    value: function insertSequence1() {
+      this.handleInsert(1);
+      this.handleInsert(2);
+      this.handleInsert(3);
+      this.handleInsert(4);
+      this.handleInsert(5);
+    }
+  }, {
+    key: 'insertSequence2',
+    value: function insertSequence2() {
+      this.handleInsert(0);
+      this.handleInsert(4);
+      this.handleInsert(2);
+      this.handleInsert(6);
+      this.handleInsert(1);
+      this.handleInsert(5);
+      this.handleInsert(3);
+      this.handleInsert(7);
     }
   }, {
     key: 'render',
@@ -23565,6 +23600,16 @@ var Home = function (_React$Component) {
             'button',
             { type: 'submit' },
             'Insert'
+          ),
+          _react2.default.createElement(
+            'button',
+            { onClick: this.insertSequence1 },
+            'Sequence 1'
+          ),
+          _react2.default.createElement(
+            'button',
+            { onClick: this.insertSequence2 },
+            'Sequence 2'
           )
         ),
         _react2.default.createElement(

@@ -17,10 +17,10 @@ class Home extends React.Component {
     this.insertElement = this.insertElement.bind(this);
     this.changeElement = this.changeElement.bind(this);
     this.selectView = this.selectView.bind(this);
+    this.insertSequence1 = this.insertSequence1.bind(this);
+    this.insertSequence2 = this.insertSequence2.bind(this);
   }
-  insertElement (event) {
-    event.preventDefault();
-    let newElement = this.state.newElement;
+  handleInsert (newElement) {
     if(newElement === '')return;
     if(this.state.standard) {
       store.dispatch({ type: INSERT_NODE, newElement });
@@ -28,6 +28,11 @@ class Home extends React.Component {
     if(this.state.geometric) {
       store.dispatch({ type: ADD_POINT, newElement });
     }
+  }
+  insertElement (event) {
+    event.preventDefault();
+    let newElement = this.state.newElement;
+    this.handleInsert(newElement);
     this.setState({newElement: ''});
   }
   changeElement (event) {
@@ -37,6 +42,23 @@ class Home extends React.Component {
     let state = this.state;
     state[event.target.value] =  event.target.checked;
     this.setState(state);
+  }
+  insertSequence1 () {
+    this.handleInsert(1);
+    this.handleInsert(2);
+    this.handleInsert(3);
+    this.handleInsert(4);
+    this.handleInsert(5);
+  }
+  insertSequence2 () {
+    this.handleInsert(0);
+    this.handleInsert(4);
+    this.handleInsert(2);
+    this.handleInsert(6);
+    this.handleInsert(1);
+    this.handleInsert(5);
+    this.handleInsert(3);
+    this.handleInsert(7);
   }
   render () {
     return (
@@ -52,6 +74,8 @@ class Home extends React.Component {
             Insert an element
           <input value={this.state.newElement} onChange={this.changeElement}></input>
           <button type="submit">Insert</button>
+          <button onClick={this.insertSequence1}>Sequence 1</button>
+          <button onClick={this.insertSequence2}>Sequence 2</button>
         </form>
         <div id="inserts">
           <h4>Enable Inserts:</h4>

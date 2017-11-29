@@ -168,20 +168,20 @@ class GeometricBSTGraph extends React.Component {
     let height = geometric.node().getBoundingClientRect().height;
     let heightMargin = height / 3;
 
+    let xDomainIdxs = points.map(x => (x.key)).map((x, i, a) => a.indexOf(x)).filter((x, i, a) => a.indexOf(x) == i);
     let xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
-      .domain(points.map(x => (x.key)));
+    //the domain is over all keys, pruning for duplicates
+      .domain(xDomainIdxs.map(x => points[x].key));
     let yRange = d3.scaleLinear().range([heightMargin, height - heightMargin])
       .domain([d3.max(points, d => d.time) + 1, d3.min(points, d => d.time) - 1]);
 
     let xAxis = d3.axisBottom(xRange)
-      .tickFormat((d, i) => points[i].value);
+      .tickFormat((d, i) => points[xDomainIdxs[i]].value);
     let yAxis = d3.axisLeft(yRange);
 
-    //geometric.remove('g.xAxis');
     geometric.selectAll('g.xAxis')
       .call(xAxis);
 
-    //geometric.remove('g.yAxis');
     geometric.selectAll('g.yAxis')
       .call(yAxis);
 
