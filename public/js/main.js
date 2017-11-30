@@ -12646,17 +12646,28 @@ var GeometricBSTGraph = function (_React$Component) {
       var width = geometric.node().getBoundingClientRect().width;
       var widthMargin = width / 10;
       var height = geometric.node().getBoundingClientRect().height;
-      var heightMargin = height / 3;
+      var heightMargin = height / 5;
 
-      var xRange = d3.scalePoint().range([widthMargin, width - widthMargin]).domain(points.map(function (x) {
+      var xDomainIdxs = points.map(function (x) {
         return x.key;
+      }).map(function (x, i, a) {
+        return a.indexOf(x);
+      }).filter(function (x, i, a) {
+        return a.indexOf(x) == i;
+      });
+      var xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
+      //the domain is over all keys, pruning for duplicates
+      .domain(xDomainIdxs.map(function (x) {
+        return points[x].key;
       }));
-
-      var yRange = d3.scaleLinear().range([heightMargin, height - heightMargin]).domain([d3.max(points, function (d) {
+      var yDomain = points.map(function (d) {
         return d.time;
-      }) + 1, d3.min(points, function (d) {
-        return d.time;
-      }) - 1]);
+      }).filter(function (x, i, a) {
+        return a.indexOf(x) == i;
+      }).sort(function (a, b) {
+        return a < b ? 1 : -1;
+      });
+      var yRange = d3.scalePoint().range([heightMargin, height - heightMargin]).domain(yDomain);
 
       for (var time = 1; time <= this.props.root.maxTime; time++) {
         var satisfiedPoints = this.props.root.runGreedyAlgorithm(time);
@@ -12714,26 +12725,36 @@ var GeometricBSTGraph = function (_React$Component) {
       var width = geometric.node().getBoundingClientRect().width;
       var widthMargin = width / 10;
       var height = geometric.node().getBoundingClientRect().height;
-      var heightMargin = height / 3;
+      var heightMargin = height / 5;
 
-      var xRange = d3.scalePoint().range([widthMargin, width - widthMargin]).domain(points.map(function (x) {
+      var xDomainIdxs = points.map(function (x) {
         return x.key;
+      }).map(function (x, i, a) {
+        return a.indexOf(x);
+      }).filter(function (x, i, a) {
+        return a.indexOf(x) == i;
+      });
+      var xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
+      //the domain is over all keys, pruning for duplicates
+      .domain(xDomainIdxs.map(function (x) {
+        return points[x].key;
       }));
-      var yRange = d3.scaleLinear().range([heightMargin, height - heightMargin]).domain([d3.max(points, function (d) {
+      var yDomain = points.map(function (d) {
         return d.time;
-      }) + 1, d3.min(points, function (d) {
-        return d.time;
-      }) - 1]);
+      }).filter(function (x, i, a) {
+        return a.indexOf(x) == i;
+      }).sort(function (a, b) {
+        return a < b ? 1 : -1;
+      });
+      var yRange = d3.scalePoint().range([heightMargin, height - heightMargin]).domain(yDomain);
 
       var xAxis = d3.axisBottom(xRange).tickFormat(function (d, i) {
-        return points[i].value;
+        return points[xDomainIdxs[i]].value;
       });
       var yAxis = d3.axisLeft(yRange);
 
-      //geometric.remove('g.xAxis');
       geometric.selectAll('g.xAxis').call(xAxis);
 
-      //geometric.remove('g.yAxis');
       geometric.selectAll('g.yAxis').call(yAxis);
 
       var point = geometric.selectAll('circle.point').data(points, function (d) {
@@ -12781,7 +12802,7 @@ var GeometricBSTGraph = function (_React$Component) {
       var width = geometric.node().getBoundingClientRect().width;
       var widthMargin = width / 10;
       var height = geometric.node().getBoundingClientRect().height;
-      var heightMargin = height / 3;
+      var heightMargin = height / 5;
 
       geometric.append('g').attr('class', 'xAxis').attr('transform', 'translate(0,' + (height - heightMargin) + ')');
 
@@ -23482,6 +23503,13 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 __webpack_require__(589);
 
+
+function sleep(ms) {
+  return new Promise(function (resolve) {
+    return setTimeout(resolve, ms);
+  });
+}
+
 var Home = function (_React$Component) {
   _inherits(Home, _React$Component);
 
@@ -23498,14 +23526,14 @@ var Home = function (_React$Component) {
     _this.insertElement = _this.insertElement.bind(_this);
     _this.changeElement = _this.changeElement.bind(_this);
     _this.selectView = _this.selectView.bind(_this);
+    _this.insertSequence1 = _this.insertSequence1.bind(_this);
+    _this.insertSequence2 = _this.insertSequence2.bind(_this);
     return _this;
   }
 
   _createClass(Home, [{
-    key: 'insertElement',
-    value: function insertElement(event) {
-      event.preventDefault();
-      var newElement = this.state.newElement;
+    key: 'handleInsert',
+    value: function handleInsert(newElement) {
       if (newElement === '') return;
       if (this.state.standard) {
         _main.store.dispatch({ type: _constants.INSERT_NODE, newElement: newElement });
@@ -23513,6 +23541,13 @@ var Home = function (_React$Component) {
       if (this.state.geometric) {
         _main.store.dispatch({ type: _constants.ADD_POINT, newElement: newElement });
       }
+    }
+  }, {
+    key: 'insertElement',
+    value: function insertElement(event) {
+      event.preventDefault();
+      var newElement = this.state.newElement;
+      this.handleInsert(newElement);
       this.setState({ newElement: '' });
     }
   }, {
@@ -23526,6 +23561,62 @@ var Home = function (_React$Component) {
       var state = this.state;
       state[event.target.value] = event.target.checked;
       this.setState(state);
+    }
+  }, {
+    key: 'insertSequence1',
+    value: function insertSequence1() {
+      var _this2 = this;
+
+      (async function () {
+        _this2.handleInsert(1);
+        await sleep(1500);
+        _this2.handleInsert(2);
+        await sleep(1500);
+        _this2.handleInsert(3);
+        await sleep(1500);
+        _this2.handleInsert(4);
+        await sleep(1500);
+        _this2.handleInsert(5);
+      })();
+    }
+  }, {
+    key: 'insertSequence2',
+    value: function insertSequence2() {
+      var _this3 = this;
+
+      (async function () {
+        _this3.handleInsert(0);
+        await sleep(1000);
+        _this3.handleInsert(8);
+        await sleep(1000);
+        _this3.handleInsert(4);
+        await sleep(1000);
+        _this3.handleInsert(12);
+        await sleep(1000);
+        _this3.handleInsert(2);
+        await sleep(1000);
+        _this3.handleInsert(10);
+        await sleep(1000);
+        _this3.handleInsert(6);
+        await sleep(1000);
+        _this3.handleInsert(14);
+        await sleep(1000);
+        _this3.handleInsert(1);
+        await sleep(1000);
+        _this3.handleInsert(9);
+        await sleep(1000);
+        _this3.handleInsert(5);
+        await sleep(1000);
+        _this3.handleInsert(13);
+        await sleep(1000);
+        _this3.handleInsert(3);
+        await sleep(1000);
+        _this3.handleInsert(11);
+        await sleep(1000);
+        _this3.handleInsert(7);
+        await sleep(1000);
+        _this3.handleInsert(15);
+      })();
     }
   }, {
     key: 'render',
@@ -23565,6 +23656,16 @@ var Home = function (_React$Component) {
             'button',
             { type: 'submit' },
             'Insert'
+          ),
+          _react2.default.createElement(
+            'button',
+            { onClick: this.insertSequence1 },
+            'Sequence 1'
+          ),
+          _react2.default.createElement(
+            'button',
+            { onClick: this.insertSequence2 },
+            'Sequence 2'
           )
         ),
         _react2.default.createElement(

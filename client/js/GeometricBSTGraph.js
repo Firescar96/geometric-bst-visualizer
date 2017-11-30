@@ -106,13 +106,15 @@ class GeometricBSTGraph extends React.Component {
     let width = geometric.node().getBoundingClientRect().width;
     let widthMargin = width / 10;
     let height = geometric.node().getBoundingClientRect().height;
-    let heightMargin = height / 3;
+    let heightMargin = height / 5;
 
+    let xDomainIdxs = points.map(x => (x.key)).map((x, i, a) => a.indexOf(x)).filter((x, i, a) => a.indexOf(x) == i);
     let xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
-      .domain(points.map(x => (x.key)));
-
-    let yRange = d3.scaleLinear().range([heightMargin, height - heightMargin])
-      .domain([d3.max(points, d => d.time) + 1, d3.min(points, d => d.time) - 1]);
+    //the domain is over all keys, pruning for duplicates
+      .domain(xDomainIdxs.map(x => points[x].key));
+    let yDomain = points.map(d => d.time).filter((x, i, a) => a.indexOf(x) == i).sort((a, b) => a < b ? 1 : -1);
+    let yRange = d3.scalePoint().range([heightMargin, height - heightMargin])
+      .domain(yDomain);
 
     for(var time = 1; time <= this.props.root.maxTime; time++) {
       let satisfiedPoints = this.props.root.runGreedyAlgorithm(time);
@@ -166,22 +168,23 @@ class GeometricBSTGraph extends React.Component {
     let width = geometric.node().getBoundingClientRect().width;
     let widthMargin = width / 10;
     let height = geometric.node().getBoundingClientRect().height;
-    let heightMargin = height / 3;
+    let heightMargin = height / 5;
 
+    let xDomainIdxs = points.map(x => (x.key)).map((x, i, a) => a.indexOf(x)).filter((x, i, a) => a.indexOf(x) == i);
     let xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
-      .domain(points.map(x => (x.key)));
-    let yRange = d3.scaleLinear().range([heightMargin, height - heightMargin])
-      .domain([d3.max(points, d => d.time) + 1, d3.min(points, d => d.time) - 1]);
+    //the domain is over all keys, pruning for duplicates
+      .domain(xDomainIdxs.map(x => points[x].key));
+    let yDomain = points.map(d => d.time).filter((x, i, a) => a.indexOf(x) == i).sort((a, b) => a < b ? 1 : -1);
+    let yRange = d3.scalePoint().range([heightMargin, height - heightMargin])
+      .domain(yDomain);
 
     let xAxis = d3.axisBottom(xRange)
-      .tickFormat((d, i) => points[i].value);
+      .tickFormat((d, i) => points[xDomainIdxs[i]].value);
     let yAxis = d3.axisLeft(yRange);
 
-    //geometric.remove('g.xAxis');
     geometric.selectAll('g.xAxis')
       .call(xAxis);
 
-    //geometric.remove('g.yAxis');
     geometric.selectAll('g.yAxis')
       .call(yAxis);
 
@@ -230,7 +233,7 @@ class GeometricBSTGraph extends React.Component {
     let width = geometric.node().getBoundingClientRect().width;
     let widthMargin = width / 10;
     let height = geometric.node().getBoundingClientRect().height;
-    let heightMargin = height / 3;
+    let heightMargin = height / 5;
 
     geometric.append('g')
       .attr('class', 'xAxis')
