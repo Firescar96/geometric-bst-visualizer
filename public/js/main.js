@@ -12646,17 +12646,28 @@ var GeometricBSTGraph = function (_React$Component) {
       var width = geometric.node().getBoundingClientRect().width;
       var widthMargin = width / 10;
       var height = geometric.node().getBoundingClientRect().height;
-      var heightMargin = height / 3;
+      var heightMargin = height / 5;
 
-      var xRange = d3.scalePoint().range([widthMargin, width - widthMargin]).domain(points.map(function (x) {
+      var xDomainIdxs = points.map(function (x) {
         return x.key;
+      }).map(function (x, i, a) {
+        return a.indexOf(x);
+      }).filter(function (x, i, a) {
+        return a.indexOf(x) == i;
+      });
+      var xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
+      //the domain is over all keys, pruning for duplicates
+      .domain(xDomainIdxs.map(function (x) {
+        return points[x].key;
       }));
-
-      var yRange = d3.scaleLinear().range([heightMargin, height - heightMargin]).domain([d3.max(points, function (d) {
+      var yDomain = points.map(function (d) {
         return d.time;
-      }) + 1, d3.min(points, function (d) {
-        return d.time;
-      }) - 1]);
+      }).filter(function (x, i, a) {
+        return a.indexOf(x) == i;
+      }).sort(function (a, b) {
+        return a < b ? 1 : -1;
+      });
+      var yRange = d3.scalePoint().range([heightMargin, height - heightMargin]).domain(yDomain);
 
       for (var time = 1; time <= this.props.root.maxTime; time++) {
         var satisfiedPoints = this.props.root.runGreedyAlgorithm(time);
@@ -12714,7 +12725,7 @@ var GeometricBSTGraph = function (_React$Component) {
       var width = geometric.node().getBoundingClientRect().width;
       var widthMargin = width / 10;
       var height = geometric.node().getBoundingClientRect().height;
-      var heightMargin = height / 3;
+      var heightMargin = height / 5;
 
       var xDomainIdxs = points.map(function (x) {
         return x.key;
@@ -12728,11 +12739,14 @@ var GeometricBSTGraph = function (_React$Component) {
       .domain(xDomainIdxs.map(function (x) {
         return points[x].key;
       }));
-      var yRange = d3.scaleLinear().range([heightMargin, height - heightMargin]).domain([d3.max(points, function (d) {
+      var yDomain = points.map(function (d) {
         return d.time;
-      }) + 1, d3.min(points, function (d) {
-        return d.time;
-      }) - 1]);
+      }).filter(function (x, i, a) {
+        return a.indexOf(x) == i;
+      }).sort(function (a, b) {
+        return a < b ? 1 : -1;
+      });
+      var yRange = d3.scalePoint().range([heightMargin, height - heightMargin]).domain(yDomain);
 
       var xAxis = d3.axisBottom(xRange).tickFormat(function (d, i) {
         return points[xDomainIdxs[i]].value;
@@ -12788,7 +12802,7 @@ var GeometricBSTGraph = function (_React$Component) {
       var width = geometric.node().getBoundingClientRect().width;
       var widthMargin = width / 10;
       var height = geometric.node().getBoundingClientRect().height;
-      var heightMargin = height / 3;
+      var heightMargin = height / 5;
 
       geometric.append('g').attr('class', 'xAxis').attr('transform', 'translate(0,' + (height - heightMargin) + ')');
 
@@ -23489,6 +23503,13 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 __webpack_require__(589);
 
+
+function sleep(ms) {
+  return new Promise(function (resolve) {
+    return setTimeout(resolve, ms);
+  });
+}
+
 var Home = function (_React$Component) {
   _inherits(Home, _React$Component);
 
@@ -23544,23 +23565,58 @@ var Home = function (_React$Component) {
   }, {
     key: 'insertSequence1',
     value: function insertSequence1() {
-      this.handleInsert(1);
-      this.handleInsert(2);
-      this.handleInsert(3);
-      this.handleInsert(4);
-      this.handleInsert(5);
+      var _this2 = this;
+
+      (async function () {
+        _this2.handleInsert(1);
+        await sleep(1500);
+        _this2.handleInsert(2);
+        await sleep(1500);
+        _this2.handleInsert(3);
+        await sleep(1500);
+        _this2.handleInsert(4);
+        await sleep(1500);
+        _this2.handleInsert(5);
+      })();
     }
   }, {
     key: 'insertSequence2',
     value: function insertSequence2() {
-      this.handleInsert(0);
-      this.handleInsert(4);
-      this.handleInsert(2);
-      this.handleInsert(6);
-      this.handleInsert(1);
-      this.handleInsert(5);
-      this.handleInsert(3);
-      this.handleInsert(7);
+      var _this3 = this;
+
+      (async function () {
+        _this3.handleInsert(0);
+        await sleep(1000);
+        _this3.handleInsert(8);
+        await sleep(1000);
+        _this3.handleInsert(4);
+        await sleep(1000);
+        _this3.handleInsert(12);
+        await sleep(1000);
+        _this3.handleInsert(2);
+        await sleep(1000);
+        _this3.handleInsert(10);
+        await sleep(1000);
+        _this3.handleInsert(6);
+        await sleep(1000);
+        _this3.handleInsert(14);
+        await sleep(1000);
+        _this3.handleInsert(1);
+        await sleep(1000);
+        _this3.handleInsert(9);
+        await sleep(1000);
+        _this3.handleInsert(5);
+        await sleep(1000);
+        _this3.handleInsert(13);
+        await sleep(1000);
+        _this3.handleInsert(3);
+        await sleep(1000);
+        _this3.handleInsert(11);
+        await sleep(1000);
+        _this3.handleInsert(7);
+        await sleep(1000);
+        _this3.handleInsert(15);
+      })();
     }
   }, {
     key: 'render',

@@ -6,6 +6,10 @@ import {store} from './main.js';
 require('../sass/home.scss');
 import {INSERT_NODE, ADD_POINT} from './constants';
 
+function sleep (ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 class Home extends React.Component {
   constructor () {
     super();
@@ -44,21 +48,52 @@ class Home extends React.Component {
     this.setState(state);
   }
   insertSequence1 () {
+    (async () => {
     this.handleInsert(1);
+    await sleep(1500)
     this.handleInsert(2);
+    await sleep(1500)
     this.handleInsert(3);
+    await sleep(1500)
     this.handleInsert(4);
+    await sleep(1500)
     this.handleInsert(5);
+  })()
   }
   insertSequence2 () {
+    (async () => {
     this.handleInsert(0);
+    await sleep(1000)
+    this.handleInsert(8);
+    await sleep(1000)
     this.handleInsert(4);
+    await sleep(1000)
+    this.handleInsert(12);
+    await sleep(1000)
     this.handleInsert(2);
+    await sleep(1000)
+    this.handleInsert(10);
+    await sleep(1000)
     this.handleInsert(6);
+    await sleep(1000)
+    this.handleInsert(14);
+    await sleep(1000)
     this.handleInsert(1);
+    await sleep(1000)
+    this.handleInsert(9);
+    await sleep(1000)
     this.handleInsert(5);
+    await sleep(1000)
+    this.handleInsert(13);
+    await sleep(1000)
     this.handleInsert(3);
+    await sleep(1000)
+    this.handleInsert(11);
+    await sleep(1000)
     this.handleInsert(7);
+    await sleep(1000)
+    this.handleInsert(15);
+  })()
   }
   render () {
     return (
