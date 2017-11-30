@@ -153,4 +153,43 @@ class Node {
   }
 }
 
+function timingTests(){
+  console.time('a');
+  let vEB4 = new Node(4);
+  console.timeEnd('a');
+  console.time('b');
+  let vEB8 = new Node(8);
+  console.timeEnd('b');
+  console.time('c');
+  let vEB16 = new Node(16);
+  console.timeEnd('c');
+  console.time('d');
+  let vEB32 = new Node(32);
+  console.timeEnd('d');
+  console.time('a');
+  vEB4.insert(14);
+  console.timeEnd('a');
+  console.time('b');
+  vEB8.insert(185);
+  console.timeEnd('b');
+  console.time('c');
+  vEB16.insert(874);
+  console.timeEnd('c');
+  console.time('d');
+  vEB32.insert(150743);
+  console.timeEnd('d');
+  console.time('a');
+  vEB4.search(14);
+  console.timeEnd('a');
+  console.time('b');
+  vEB8.search(185);
+  console.timeEnd('b');
+  console.time('c');
+  vEB16.search(874);
+  console.timeEnd('c');
+  console.time('d');
+  vEB32.search(150743);
+  console.timeEnd('d');
+}
+
 module.exports = Node;
