@@ -5424,6 +5424,10 @@ var _Home = __webpack_require__(294);
 
 var _Home2 = _interopRequireDefault(_Home);
 
+var _VEBGraph = __webpack_require__(744);
+
+var _VEBGraph2 = _interopRequireDefault(_VEBGraph);
+
 var _react = __webpack_require__(7);
 
 var _react2 = _interopRequireDefault(_react);
@@ -5454,7 +5458,12 @@ exports.store = store; //exported here so it's available in all the subcompnents
   _react2.default.createElement(
     _reactRouterDom.BrowserRouter,
     null,
-    _react2.default.createElement(_reactRouterDom.Route, { path: '*', component: _Home2.default })
+    _react2.default.createElement(
+      'div',
+      null,
+      _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: _Home2.default }),
+      _react2.default.createElement(_reactRouterDom.Route, { path: '/veb', component: _VEBGraph2.default })
+    )
   )
 ), document.getElementById('root'));
 
@@ -53080,6 +53089,370 @@ module.exports = function(module) {
 	return module;
 };
 
+
+/***/ }),
+/* 739 */,
+/* 740 */,
+/* 741 */,
+/* 742 */,
+/* 743 */,
+/* 744 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = __webpack_require__(7);
+
+var _react2 = _interopRequireDefault(_react);
+
+var _d = __webpack_require__(244);
+
+var d3 = _interopRequireWildcard(_d);
+
+var _VEBNode = __webpack_require__(745);
+
+var _VEBNode2 = _interopRequireDefault(_VEBNode);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var ELEMENT_WIDTH = 30;
+var ELEMENT_HEIGHT = 20;
+
+var vEBGraph = function (_React$Component) {
+  _inherits(vEBGraph, _React$Component);
+
+  function vEBGraph() {
+    _classCallCheck(this, vEBGraph);
+
+    var _this = _possibleConstructorReturn(this, (vEBGraph.__proto__ || Object.getPrototypeOf(vEBGraph)).call(this));
+
+    _this.state = {
+      simulation: d3.forceSimulation(),
+      newElement: '',
+      root: new _VEBNode2.default(2)
+    };
+    _this.insertElement = _this.insertElement.bind(_this);
+    _this.changeElement = _this.changeElement.bind(_this);
+    return _this;
+  }
+
+  _createClass(vEBGraph, [{
+    key: 'changeElement',
+    value: function changeElement(event) {
+      this.setState({ newElement: event.target.value });
+    }
+  }, {
+    key: 'insertElement',
+    value: function insertElement(event) {
+      event.preventDefault();
+      var newElement = this.state.newElement;
+
+      this.setState({ newElement: '' });
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      return _react2.default.createElement(
+        'div',
+        null,
+        _react2.default.createElement(
+          'form',
+          { onSubmit: this.insertElement },
+          'Insert an element',
+          _react2.default.createElement('input', { value: this.state.newElement, onChange: this.changeElement }),
+          _react2.default.createElement(
+            'button',
+            { type: 'submit' },
+            'Insert'
+          )
+        ),
+        _react2.default.createElement(
+          'button',
+          { onClick: this.makeGeometricBST },
+          'Make Geometric BST'
+        ),
+        _react2.default.createElement(
+          'svg',
+          { id: 'veb', className: 'graph' },
+          _react2.default.createElement('g', { id: 'links' }),
+          _react2.default.createElement('g', { id: 'nodes' })
+        )
+      );
+    }
+  }, {
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      var keys = this.state.root.traversal();
+
+      var nodes = [];
+      var clusters = this.state.root.clusterTraversal();
+      var treeHeight = Math.log(this.state.root.bits, 2);
+      clusters.forEach(function (c) {
+        //return a list these one for each object element
+        var clusterHeight = Math.log(c.bits, 2);
+        var depth = treeHeight - clusterHeight;
+        for (var i = 0; i < c.bits; i++) {
+          console.log(c);
+          nodes.push({
+            y: depth * ELEMENT_HEIGHT * 2,
+            //spacing between clusters   cluster width
+            x: (c.parentIndex * c.size * 2 + i) * ELEMENT_WIDTH
+          });
+        }
+      });
+      console.log(nodes);
+      var veb = d3.select('#veb');
+      var element = veb.select('#nodes').selectAll('rect.element').data(nodes);
+      var height = veb.node().getBoundingClientRect().height;
+      var heightMargin = height / 5;
+
+      element.enter().append('rect').attr('class', 'element').attr('x', function (d) {
+        return d.x;
+      }).attr('y', function (d) {
+        return d.y;
+      }).attr('width', ELEMENT_WIDTH).attr('height', ELEMENT_HEIGHT).attr('fill', 'none').attr('stroke', 'white');
+
+      element.exit().remove();
+    }
+  }, {
+    key: 'componentDidUpdate',
+    value: function componentDidUpdate() {
+      //TODO
+    }
+  }]);
+
+  return vEBGraph;
+}(_react2.default.Component);
+
+exports.default = vEBGraph;
+
+/***/ }),
+/* 745 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Node = function () {
+  function Node(bits) {
+    _classCallCheck(this, Node);
+
+    //vEB tree constructed upon initialization
+    //bits is 2^n for some integer n
+    //this implementation stores neither the min nor the max recursively
+    this.bits = bits;
+    this.size = Math.pow(2, bits);
+    if (this.bits == 1) {
+      this.cluster = [];
+      this.summary = null;
+    } else {
+      this.cluster = [];
+      for (var i = 0; i < Math.pow(2, bits / 2); i++) {
+        var child = new Node(bits / 2);
+        child.parent = this;
+        child.parentIndex = i;
+        this.cluster.push(child);
+      }
+      this.summary = new Node(bits / 2);
+    }
+    this.min = null;
+    this.max = null;
+    this.parent = null;
+    this.parentIndex = null;
+  }
+
+  //searches for a key, returns true if it exists
+
+
+  _createClass(Node, [{
+    key: 'search',
+    value: function search(key) {
+      if (this.bits == 1) {
+        return Boolean(this.cluster[key]);
+      } else if (key < this.min || key > this.max) {
+        return false;
+      } else if (key == this.min || key == this.max) {
+        return true;
+      }
+      var highBits = key >> this.bits / 2;
+      var lowBits = key & (1 << this.bits / 2) - 1;
+      return this.cluster[highBits].search(lowBits);
+    }
+
+    //inserts a key
+
+  }, {
+    key: 'insert',
+    value: function insert(key) {
+      if (this.bits == 1) {
+        this.cluster[key] = 1;
+        if (this.min === null || key < this.min) {
+          this.min = key;
+        }
+        if (this.max === null || key > this.max) {
+          this.max = key;
+        }
+      } else if (this.min === null) {
+        this.min = key;
+        this.max = key;
+      } else {
+        var highBits = key >> this.bits / 2;
+        var lowBits = key & (1 << this.bits / 2) - 1;
+        if (key < this.min) {
+          var nextLevelInsert = this.min;
+          this.min = key;
+          highBits = nextLevelInsert >> this.bits / 2;
+          lowBits = nextLevelInsert & (1 << this.bits / 2) - 1;
+        } else if (key > this.max) {
+          var _nextLevelInsert = this.max;
+          this.max = key;
+          highBits = _nextLevelInsert >> this.bits / 2;
+          lowBits = _nextLevelInsert & (1 << this.bits / 2) - 1;
+        }
+        if (this.cluster[highBits].min === null) {
+          this.summary.insert(highBits);
+        }
+        this.cluster[highBits].insert(lowBits);
+      }
+    }
+
+    //deletes a key
+
+  }, {
+    key: 'delete_',
+    value: function delete_(key) {
+      if (this.bits == 1) {
+        this.cluster[key] = 0;
+        if (this.cluster[1 - key] == 0) {
+          this.min = null;
+          this.max = null;
+        } else if (key == 0) {
+          this.min = 1;
+        } else {
+          this.max = 0;
+        }
+      } else if (key == this.min) {
+        var newHighBits = this.summary.min;
+        if (newHighBits == null) {
+          this.min = null;
+          this.max = null;
+          return;
+        }
+        var highBits = key >> this.bits / 2;
+        //TODO: work out
+      }
+    }
+
+    //finds successor of a key, if any
+
+  }, {
+    key: 'succ',
+    value: function succ(key) {
+      if (this.min === null) {
+        return null;
+      } else if (key >= this.max) {
+        return null;
+      } else if (this.size == 2) {
+        if (this.cluster[1] == 0) {
+          return null;
+        } else if (key == 0) {
+          return 1;
+        }
+      }
+      if (key < this.min) {
+        return this.min;
+      }
+      var highBits = key >> this.bits / 2;
+      var lowBits = key & (1 << this.bits / 2) - 1;
+      if (lowBits < this.cluster[highBits].max) {
+        return (highBits << this.bits / 2) + this.cluster[highBits].succ(lowBits);
+      }
+      console.log('DEBUG INFO:');
+      console.log(this.summary.min);
+      console.log(this.summary.max);
+      var newHighBits = this.summary.succ(highBits);
+      if (newHighBits === null && highBits < this.max >> this.bits / 2) {
+        newHighBits = this.max >> this.bits / 2;
+      }
+      console.log(newHighBits);
+      console.log(this.cluster.length);
+      return (newHighBits << this.bits / 2) + this.cluster[newHighBits].min;
+    }
+
+    //finds predecessor of a key, if any
+
+  }, {
+    key: 'pred',
+    value: function pred(key) {
+      if (this.max === null) {
+        return null;
+      } else if (this.size == 2) {
+        if (this.cluster[0] == 0) {
+          return null;
+        } else if (key == 1) {
+          return 0;
+        }
+      }
+      if (key > this.max) {
+        return this.max;
+      }
+      var highBits = key >> this.bits / 2;
+      var lowBits = key & (1 << this.bits / 2) - 1;
+      if (lowBits < this.cluster[highBits].min) {
+        return (highBits << this.bits / 2) + this.cluster[highBits].pred(highBits);
+      }
+      var newHighBits = this.summary.pred(highBits);
+      return (newHighBits << this.bits / 2) + this.cluster[newHighBits].max;
+    }
+  }, {
+    key: 'clusterTraversal',
+    value: function clusterTraversal() {
+      var clusters = [];
+      var agenda = [this];
+      while (agenda.length > 0) {
+        var element = agenda.shift();
+        clusters.push(element);
+        agenda.push.apply(agenda, _toConsumableArray(element.cluster));
+      }
+
+      return clusters;
+    }
+  }, {
+    key: 'traversal',
+    value: function traversal() {
+      var keys = [];
+      for (var i = 0; i < this.size; i++) {
+        if (this.search(i)) keys.push(i);
+      }
+      return keys;
+    }
+  }]);
+
+  return Node;
+}();
+
+module.exports = Node;
 
 /***/ })
 /******/ ]);
