@@ -97,7 +97,7 @@ class Home extends React.Component {
   }
   render () {
     return (
-      <main>
+      <main id="home">
         <h1 id="title">Binary Search Tree Visualizer</h1>
         <div id="graphTitles">
           <div>

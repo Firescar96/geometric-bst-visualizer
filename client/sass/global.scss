@@ -1,0 +1,16 @@
+//global.scss
+html, body, #root, #root >div {
+  width: auto;
+  height: 100%;
+  background-color: #282828;
+  color: white;
+}
+
+h1 {
+  color: #eee;
+  font: 30px Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-shadow: 0px 1px black;
+  text-align: center;
+  margin-bottom: 50px;
+}

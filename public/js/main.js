@@ -5446,6 +5446,8 @@ var _GeometricBSTGraph = __webpack_require__(158);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+__webpack_require__(746);
+
 var store = (0, _redux.createStore)((0, _redux.combineReducers)({
   standardBST: _StandardBSTGraph.standardBSTReducer,
   geometricBST: _GeometricBSTGraph.geometricBSTReducer
@@ -23632,7 +23634,7 @@ var Home = function (_React$Component) {
     value: function render() {
       return _react2.default.createElement(
         'main',
-        null,
+        { id: 'home' },
         _react2.default.createElement(
           'h1',
           { id: 'title' },
@@ -53132,6 +53134,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var ELEMENT_WIDTH = 30;
 var ELEMENT_HEIGHT = 20;
+__webpack_require__(748);
 
 var vEBGraph = function (_React$Component) {
   _inherits(vEBGraph, _React$Component);
@@ -53144,8 +53147,9 @@ var vEBGraph = function (_React$Component) {
     _this.state = {
       simulation: d3.forceSimulation(),
       newElement: '',
-      root: new _VEBNode2.default(2)
+      root: new _VEBNode2.default(8)
     };
+    console.log('root', _this.state.root);
     _this.insertElement = _this.insertElement.bind(_this);
     _this.changeElement = _this.changeElement.bind(_this);
     return _this;
@@ -53168,8 +53172,8 @@ var vEBGraph = function (_React$Component) {
     key: 'render',
     value: function render() {
       return _react2.default.createElement(
-        'div',
-        null,
+        'main',
+        { id: 'veb' },
         _react2.default.createElement(
           'form',
           { onSubmit: this.insertElement },
@@ -53182,11 +53186,6 @@ var vEBGraph = function (_React$Component) {
           )
         ),
         _react2.default.createElement(
-          'button',
-          { onClick: this.makeGeometricBST },
-          'Make Geometric BST'
-        ),
-        _react2.default.createElement(
           'svg',
           { id: 'veb', className: 'graph' },
           _react2.default.createElement('g', { id: 'links' }),
@@ -53197,29 +53196,33 @@ var vEBGraph = function (_React$Component) {
   }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
-      var keys = this.state.root.traversal();
-
-      var nodes = [];
-      var clusters = this.state.root.clusterTraversal();
-      var treeHeight = Math.log(this.state.root.bits, 2);
-      clusters.forEach(function (c) {
-        //return a list these one for each object element
-        var clusterHeight = Math.log(c.bits, 2);
-        var depth = treeHeight - clusterHeight;
-        for (var i = 0; i < c.bits; i++) {
-          console.log(c);
-          nodes.push({
-            y: depth * ELEMENT_HEIGHT * 2,
-            //spacing between clusters   cluster width
-            x: (c.parentIndex * c.size * 2 + i) * ELEMENT_WIDTH
-          });
-        }
-      });
-      console.log(nodes);
-      var veb = d3.select('#veb');
-      var element = veb.select('#nodes').selectAll('rect.element').data(nodes);
+      var veb = d3.select('svg#veb');
       var height = veb.node().getBoundingClientRect().height;
       var heightMargin = height / 5;
+      var width = veb.node().getBoundingClientRect().width;
+
+      var keys = this.state.root.traversal();
+
+      var clusters = this.state.root.clusterTraversal();
+      console.log(clusters);
+      var treeHeight = Math.log(this.state.root.bits, 2) - 1;
+      clusters.forEach(function (c) {
+        if (!c.parent) {
+          c.x = width / 2;
+          c.y = heightMargin;
+          return;
+        }
+        //return a list these one for each object element
+        var clusterHeight = Math.log2(c.bits) - 1;
+        var depth = treeHeight - clusterHeight;
+        //align to parent  spacing between clusters
+        c.x = c.parent.x + Math.pow(2, clusterHeight + 1) * c.parentIndex * ELEMENT_WIDTH - Math.pow(2, clusterHeight + 1) * (c.bits - 1) * ELEMENT_WIDTH / 2;
+        c.y = c.parent.y + ELEMENT_HEIGHT * 5;
+        console.log('height', clusterHeight);
+        //console.log((Math.pow(2, clusterHeight) * c.parentIndex) * ELEMENT_WIDTH);
+      });
+      console.log('clusters', clusters);
+      var element = veb.select('#nodes').selectAll('rect.element').data(clusters);
 
       element.enter().append('rect').attr('class', 'element').attr('x', function (d) {
         return d.x;
@@ -53263,12 +53266,12 @@ var Node = function () {
     //this implementation stores neither the min nor the max recursively
     this.bits = bits;
     this.size = Math.pow(2, bits);
-    if (this.bits == 1) {
+    if (this.bits == 2) {
       this.cluster = [];
       this.summary = null;
     } else {
       this.cluster = [];
-      for (var i = 0; i < Math.pow(2, bits / 2); i++) {
+      for (var i = 0; i < bits / 2; i++) {
         var child = new Node(bits / 2);
         child.parent = this;
         child.parentIndex = i;
@@ -53288,7 +53291,7 @@ var Node = function () {
   _createClass(Node, [{
     key: 'search',
     value: function search(key) {
-      if (this.bits == 1) {
+      if (this.bits == 2) {
         return Boolean(this.cluster[key]);
       } else if (key < this.min || key > this.max) {
         return false;
@@ -53305,8 +53308,7 @@ var Node = function () {
   }, {
     key: 'insert',
     value: function insert(key) {
-      if (this.bits == 1) {
-        this.cluster[key] = 1;
+      if (this.bits == 2) {
         if (this.min === null || key < this.min) {
           this.min = key;
         }
@@ -53342,8 +53344,7 @@ var Node = function () {
   }, {
     key: 'delete_',
     value: function delete_(key) {
-      if (this.bits == 1) {
-        this.cluster[key] = 0;
+      if (this.bits == 2) {
         if (this.cluster[1 - key] == 0) {
           this.min = null;
           this.max = null;
@@ -53453,6 +53454,19 @@ var Node = function () {
 }();
 
 module.exports = Node;
+
+/***/ }),
+/* 746 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 747 */,
+/* 748 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
 
 /***/ })
 /******/ ]);
