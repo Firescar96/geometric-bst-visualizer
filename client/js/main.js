@@ -7,6 +7,7 @@ import { Provider } from 'react-redux';
 import { combineReducers, createStore } from 'redux';
 import { standardBSTReducer } from './StandardBSTGraph';
 import { geometricBSTReducer } from './GeometricBSTGraph';
+require('../sass/global.scss');
 
 let store = createStore(combineReducers({
   standardBST: standardBSTReducer,
