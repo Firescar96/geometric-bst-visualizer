@@ -1,5 +1,4 @@
 -need visualization of creating the gbst from sbst, node by node construction
 -show via (green?) dots the touched nodes in the gbst upon insert in sbst
   -show each node one at a time appearing as i step through the sbst
--include a couple demo sequences (helps for demos)
 -show which nodes correspond to which by clicking and highlighting

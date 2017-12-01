@@ -1,4 +1,5 @@
 import Home from './Home.js';
+import VEBGraph from './VEBGraph';
 import React from 'react';
 import { render } from 'react-dom';
 import { BrowserRouter, Route } from 'react-router-dom';
@@ -16,7 +17,10 @@ export {store}; //exported here so it's available in all the subcompnents
 render((
   <Provider store={store}>
     <BrowserRouter>
-      <Route path="*" component={Home}/>
+      <div>
+        <Route exact path="/" component={Home}/>
+        <Route path="/veb" component={VEBGraph}/>
+      </div>
     </BrowserRouter>
   </Provider>
 ), document.getElementById('root'));
