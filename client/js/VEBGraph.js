@@ -1,6 +1,7 @@
 import React from 'react';
 import *as d3 from 'd3';
 import VEBNode from './VEBNode';
+import TreeView from './TreeView';
 const ELEMENT_WIDTH = 30;
 const ELEMENT_HEIGHT = 20;
 require('../sass/veb.scss');
@@ -11,9 +12,9 @@ class vEBGraph extends React.Component {
     this.state = {
       simulation: d3.forceSimulation(),
       newElement: '',
-      root: new VEBNode(8),
+      root: new VEBNode(4),
     };
-    console.log('root', this.state.root);
+    window.tree = this.state.root;
     this.insertElement = this.insertElement.bind(this);
     this.changeElement = this.changeElement.bind(this);
   }
@@ -25,7 +26,7 @@ class vEBGraph extends React.Component {
   insertElement (event) {
     event.preventDefault();
     let newElement = this.state.newElement;
-
+    this.state.root.insert(newElement);
     this.setState({newElement: ''});
   }
 
@@ -51,44 +52,61 @@ class vEBGraph extends React.Component {
     let heightMargin = height / 5;
     let width = veb.node().getBoundingClientRect().width;
 
-    let keys = this.state.root.traversal();
-
-    let clusters = this.state.root.clusterTraversal();
-    console.log(clusters);
-    let treeHeight = Math.log(this.state.root.bits, 2) - 1;
-    clusters.forEach(c => {
-      if(!c.parent) {
-        c.x = width / 2;
-        c.y = heightMargin;
+    let bitvector = this.state.root.bitvector();
+    let treeView = new TreeView(bitvector);
+    let bitNodes = treeView.traversal();
+    let treeHeight = Math.log2(bitvector.length) - 1;
+    bitNodes.forEach(node => {
+      if(!node.parent) {
+        node.x = width / 2;
+        node.y = heightMargin;
         return;
       }
-      //return a list these one for each object element
-      let clusterHeight = Math.log2(c.bits) - 1;
-      let depth = (treeHeight - clusterHeight);
+      let nodeHeight = Math.log2(node.bitvector.length) - 1;
+      let depth = (treeHeight - nodeHeight);
       //align to parent  spacing between clusters
-      c.x = c.parent.x + Math.pow(2, clusterHeight + 1) * c.parentIndex * ELEMENT_WIDTH - Math.pow(2, clusterHeight + 1) * (c.bits - 1) * ELEMENT_WIDTH / 2;
-      c.y = c.parent.y + ELEMENT_HEIGHT * 5;
-      console.log('height', clusterHeight);
-      //console.log((Math.pow(2, clusterHeight) * c.parentIndex) * ELEMENT_WIDTH);
+      let delta = ELEMENT_WIDTH * Math.pow(2, nodeHeight + 1);
+      node.x = node == node.parent.left ? node.parent.x - delta : node.parent.x + delta;
+      node.y = node.parent.y + ELEMENT_HEIGHT * 5;
     });
-    console.log('clusters', clusters);
-    let element = veb.select('#nodes').selectAll('rect.element').data(clusters);
+    console.log('bitnodes', bitNodes);
+    let node = veb.select('#nodes').selectAll('rect.element').data(bitNodes);
 
-    element.enter()
-      .append('rect')
-      .attr('class', 'element')
+    let nodeG = node.enter()
+      .append('svg')
+      .attr('class', 'node')
       .attr('x', d => d.x)
       .attr('y', d => d.y)
+      .attr('width', ELEMENT_WIDTH)
+      .attr('height', ELEMENT_HEIGHT);
+
+    nodeG.append('rect')
+      .attr('class', 'element')
       .attr('width', ELEMENT_WIDTH)
       .attr('height', ELEMENT_HEIGHT)
       .attr('fill', 'none')
       .attr('stroke', 'white');
 
-    element.exit().remove();
+    nodeG.append('text')
+      .attr('class', 'node')
+      .attr('fill', 'white')
+      .attr('x', '50%')
+      .attr('y', '50%')
+      .attr('text-anchor', 'middle')
+      .attr('alignment-baseline', 'middle')
+      .text((d) => d.value);
+
+    nodeG.exit().remove();
   }
 
   componentDidUpdate () {
-    //TODO
+    let veb = d3.select('svg#veb');
+    //console.log(this.state.root);
+    let bitvector = this.state.root.bitvector();
+    let treeView = new TreeView(bitvector);
+    let bitNodes = treeView.traversal();
+    veb.selectAll('text.node').data(bitNodes)
+      .text((d) => d.value);
   }
 }
 

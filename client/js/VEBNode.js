@@ -5,28 +5,23 @@ class Node {
     //this implementation stores neither the min nor the max recursively
     this.bits = bits;
     this.size = Math.pow(2, bits);
-    if(this.bits == 2) {
-      this.cluster = [];
+    if(this.bits == 1) {
+      this.cluster = [0, 0];
       this.summary = null;
     }else {
       this.cluster = [];
-      for(let i = 0; i < (bits / 2); i++) {
-        let child = new Node(bits / 2);
-        child.parent = this;
-        child.parentIndex = i;
-        this.cluster.push(child);
+      for(let i = 0; i < Math.pow(2, bits / 2); i++) {
+        this.cluster.push(new Node(bits / 2));
       }
       this.summary = new Node(bits / 2);
     }
     this.min = null;
     this.max = null;
-    this.parent = null;
-    this.parentIndex = null;
   }
 
   //searches for a key, returns true if it exists
   search (key) {
-    if(this.bits == 2) {
+    if(this.bits == 1) {
       return Boolean(this.cluster[key]);
     }else if(key < this.min || key >this.max) {
       return false;
@@ -40,8 +35,10 @@ class Node {
   }
 
   //inserts a key
+  //TODO: don't reinsert repeated keys
   insert (key) {
-    if(this.bits == 2) {
+    if(this.bits == 1) {
+      this.cluster[key] = 1;
       if(this.min === null || key < this.min) {
         this.min = key;
       }
@@ -65,6 +62,7 @@ class Node {
         highBits = nextLevelInsert >> this.bits / 2;
         lowBits = nextLevelInsert & ((1 << this.bits / 2) - 1);
       }
+      console.log(this.cluster, highBits);
       if(this.cluster[highBits].min === null) {
         this.summary.insert(highBits);
       }
@@ -74,7 +72,8 @@ class Node {
 
   //deletes a key
   delete_ (key) {
-    if(this.bits == 2) {
+    if(this.bits == 1) {
+      this.cluster[key] = 0;
       if(this.cluster[1 - key] == 0) {
         this.min = null;
         this.max = null;
@@ -151,26 +150,27 @@ class Node {
     }
     let newHighBits = this.summary.pred(highBits);
     return (newHighBits << this.bits / 2) + this.cluster[newHighBits].max;
+
+
+
   }
 
-  clusterTraversal () {
-    let clusters = [];
-    let agenda = [this];
-    while(agenda.length > 0) {
-      let element = agenda.shift();
-      clusters.push(element);
-      agenda.push(...element.cluster);
+  //TODO include min and max in bitvector
+  bitvector (highbits, vector) {
+    highbits = highbits || 0;
+    vector = vector || new Array(this.size).fill(0);
+    if(this.min !== null) vector[highbits | this.min] = 1;
+    if(this.max !== null) vector[highbits | this.max] = 1;
+    if(this.summary) {
+      let summaryBitvector = this.summary.bitvector();
+      for(var i = 0; i < summaryBitvector.length; i++) {
+        if(summaryBitvector[i]) {
+          this.cluster[i].bitvector(highbits | (i << this.bits / 2), vector);
+        }
+      }
     }
 
-    return clusters;
-  }
-
-  traversal () {
-    let keys = [];
-    for(var i = 0; i < this.size; i++) {
-      if(this.search(i)) keys.push(i);
-    }
-    return keys;
+    return vector;
   }
 }
 
