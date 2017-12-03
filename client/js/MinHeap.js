@@ -9,6 +9,7 @@ class MinHeap {
   }
   insert (value) {
     this.queue.push(value);
+    console.log('bubble up', value);
     this.bubbleUp(this.queue.length - 1);
     //if(this.queue.length > 1 && )
   }
@@ -16,6 +17,7 @@ class MinHeap {
     return this.queue[0];
   }
   pop () {
+    console.log(this.queue.map(x => x));
     var oldRoot = this.queue[0];
     this.queue[0] =  this.queue[this.queue.length - 1];
     this.queue[this.queue.length - 1] = oldRoot;
@@ -28,7 +30,9 @@ class MinHeap {
       return;
     }
     var parent = this.getParentIndex(index);
+    console.log('parent', parent, index, this.evaluate(index, parent));
     if(this.evaluate(index, parent)) {
+      console.log('swapping', parent, index);
       this.swap(index, parent);
       this.bubbleUp(parent);
     }else {

@@ -167,6 +167,7 @@ class Node {
       if(curElem.left !== null) {agenda.push(curElem.left);}
       if(curElem.right !== null) {agenda.push(curElem.right);}
     }
+    console.log(elements);
     return elements;
   }
 

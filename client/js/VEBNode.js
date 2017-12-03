@@ -5,23 +5,28 @@ class Node {
     //this implementation stores neither the min nor the max recursively
     this.bits = bits;
     this.size = Math.pow(2, bits);
-    if(this.bits == 1) {
-      this.cluster = [0, 0];
+    if(this.bits == 2) {
+      this.cluster = [];
       this.summary = null;
     }else {
       this.cluster = [];
-      for(let i = 0; i < Math.pow(2, bits / 2); i++) {
-        this.cluster.push(new Node(bits / 2));
+      for(let i = 0; i < (bits / 2); i++) {
+        let child = new Node(bits / 2);
+        child.parent = this;
+        child.parentIndex = i;
+        this.cluster.push(child);
       }
       this.summary = new Node(bits / 2);
     }
     this.min = null;
     this.max = null;
+    this.parent = null;
+    this.parentIndex = null;
   }
 
   //searches for a key, returns true if it exists
   search (key) {
-    if(this.bits == 1) {
+    if(this.bits == 2) {
       return Boolean(this.cluster[key]);
     }else if(key < this.min || key >this.max) {
       return false;
@@ -36,8 +41,7 @@ class Node {
 
   //inserts a key
   insert (key) {
-    if(this.bits == 1) {
-      this.cluster[key] = 1;
+    if(this.bits == 2) {
       if(this.min === null || key < this.min) {
         this.min = key;
       }
@@ -70,8 +74,7 @@ class Node {
 
   //deletes a key
   delete_ (key) {
-    if(this.bits == 1) {
-      this.cluster[key] = 0;
+    if(this.bits == 2) {
       if(this.cluster[1 - key] == 0) {
         this.min = null;
         this.max = null;
@@ -148,25 +151,26 @@ class Node {
     }
     let newHighBits = this.summary.pred(highBits);
     return (newHighBits << this.bits / 2) + this.cluster[newHighBits].max;
-
-
-
   }
 
-  //TODO include min and max in bitvector
-  bitvector () {
-    let vector = [];
+  clusterTraversal () {
+    let clusters = [];
     let agenda = [this];
     while(agenda.length > 0) {
       let element = agenda.shift();
-      if(element.summary) {
-        agenda.push(...element.cluster);
-      }else {
-        vector.push(...element.cluster);
-      }
+      clusters.push(element);
+      agenda.push(...element.cluster);
     }
 
-    return vector;
+    return clusters;
+  }
+
+  traversal () {
+    let keys = [];
+    for(var i = 0; i < this.size; i++) {
+      if(this.search(i)) keys.push(i);
+    }
+    return keys;
   }
 }
 
