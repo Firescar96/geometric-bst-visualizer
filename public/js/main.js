@@ -5464,7 +5464,13 @@ exports.store = store; //exported here so it's available in all the subcompnents
       'div',
       null,
       _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: _Home2.default }),
-      _react2.default.createElement(_reactRouterDom.Route, { path: '/veb', component: _VEBGraph2.default })
+      _react2.default.createElement(_reactRouterDom.Route, { path: '/veb', component: _VEBGraph2.default }),
+      _react2.default.createElement(
+        _reactRouterDom.Route,
+        { path: '/geometric-bst-visualizer/' },
+        _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: _Home2.default }),
+        _react2.default.createElement(_reactRouterDom.Route, { path: '/veb', component: _VEBGraph2.default })
+      )
     )
   )
 ), document.getElementById('root'));

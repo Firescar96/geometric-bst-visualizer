@@ -21,6 +21,10 @@ render((
       <div>
         <Route exact path="/" component={Home}/>
         <Route path="/veb" component={VEBGraph}/>
+        <Route path="/geometric-bst-visualizer/">
+          <Route exact path="/" component={Home}/>
+          <Route path="/veb" component={VEBGraph}/>
+        </Route>
       </div>
     </BrowserRouter>
   </Provider>
