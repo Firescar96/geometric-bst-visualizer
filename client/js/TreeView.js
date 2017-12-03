@@ -38,7 +38,6 @@ class Node {
       ancestors.push({source: curElem.parent, target: curElem});
       curElem = curElem.parent;
     }
-    console.log(ancestors);
     return ancestors;
 
   }

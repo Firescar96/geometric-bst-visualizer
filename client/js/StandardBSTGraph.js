@@ -82,6 +82,7 @@ class StandardBSTGraph extends React.Component {
         <svg id="standard" className="graph">
           <g id="links"></g>
           <g id="nodes"></g>
+          <g id="values"></g>
         </svg>
       </div>
     );
@@ -187,11 +188,6 @@ class StandardBSTGraph extends React.Component {
       .text((d) => d.value);
 
     node.exit().remove();
-
-    this.simulation.nodes(nodes)
-      .force('link', d3.forceLink(linkList).strength(0.5).distance(100))
-      .alpha(1)
-      .restart();
   }
 }
 

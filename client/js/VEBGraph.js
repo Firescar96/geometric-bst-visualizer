@@ -61,6 +61,7 @@ class vEBGraph extends React.Component {
         <svg id="veb" className="graph">
           <g id="links"/>
           <g id="nodes"/>
+          <g id="values"/>
         </svg>
       </main>
     );
@@ -102,10 +103,10 @@ class vEBGraph extends React.Component {
 
     nodeG.append('rect')
       .attr('class', 'node')
-      .attr('width', ELEMENT_WIDTH)
-      .attr('height', ELEMENT_HEIGHT)
       .attr('x', 1)
       .attr('y', 1)
+      .attr('width', ELEMENT_WIDTH)
+      .attr('height', ELEMENT_HEIGHT)
       .attr('fill', 'black')
       .attr('stroke', 'white');
 
@@ -146,6 +147,37 @@ class vEBGraph extends React.Component {
       .attr('x2', d => d.target.x + ELEMENT_WIDTH / 2)
       .attr('y2', d => d.target.y + ELEMENT_WIDTH / 2);
     links.exit().remove();
+
+    let leafNodes = bitNodes.filter(d => d.left == null && d.right == null)
+    let values = veb.select('#values').selectAll('svg.value').data(leafNodes)
+    console.log(leafNodes);
+
+    let valuesG = values.enter()
+      .append('svg')
+      .attr('class', 'value')
+      .attr('x', d => d.x - 1)
+      .attr('y', d => d.y - 1 + ELEMENT_HEIGHT*2)
+      .attr('width', ELEMENT_WIDTH + 1)
+      .attr('height', ELEMENT_HEIGHT + 1);
+
+    valuesG.append('line')
+      .attr('class', 'value')
+      .attr('x1', 1)
+      .attr('y1', ELEMENT_HEIGHT)
+      .attr('x2', ELEMENT_WIDTH)
+      .attr('y2', ELEMENT_HEIGHT)
+      .attr('fill', 'black')
+      .attr('stroke', 'white');
+
+    valuesG.append('text')
+      .attr('class', 'value')
+      .attr('fill', 'white')
+      .attr('x', '50%')
+      .attr('y', '60%')
+      .attr('text-anchor', 'middle')
+      .attr('alignment-baseline', 'middle')
+
+    valuesG.exit().remove();
   }
 
   componentDidUpdate () {
@@ -159,6 +191,10 @@ class vEBGraph extends React.Component {
 
     veb.selectAll('line')
       .attr('stroke', '#ddd')
+
+    let leafNodes = bitNodes.filter(d => d.left == null && d.right == null)
+    veb.selectAll('text.value').data(leafNodes)
+      .text((d, i) => d.value ? i : null);
   }
 }
 

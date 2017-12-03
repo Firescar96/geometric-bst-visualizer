@@ -13461,7 +13461,8 @@ var StandardBSTGraph = function (_React$Component) {
           'svg',
           { id: 'standard', className: 'graph' },
           _react2.default.createElement('g', { id: 'links' }),
-          _react2.default.createElement('g', { id: 'nodes' })
+          _react2.default.createElement('g', { id: 'nodes' }),
+          _react2.default.createElement('g', { id: 'values' })
         )
       );
     }
@@ -13551,8 +13552,6 @@ var StandardBSTGraph = function (_React$Component) {
       });
 
       node.exit().remove();
-
-      this.simulation.nodes(nodes).force('link', d3.forceLink(linkList).strength(0.5).distance(100)).alpha(1).restart();
     }
   }]);
 
@@ -23849,7 +23848,8 @@ var vEBGraph = function (_React$Component) {
           'svg',
           { id: 'veb', className: 'graph' },
           _react2.default.createElement('g', { id: 'links' }),
-          _react2.default.createElement('g', { id: 'nodes' })
+          _react2.default.createElement('g', { id: 'nodes' }),
+          _react2.default.createElement('g', { id: 'values' })
         )
       );
     }
@@ -23887,7 +23887,7 @@ var vEBGraph = function (_React$Component) {
         return d.y - 1;
       }).attr('width', ELEMENT_WIDTH + 1).attr('height', ELEMENT_HEIGHT + 1);
 
-      nodeG.append('rect').attr('class', 'node').attr('width', ELEMENT_WIDTH).attr('height', ELEMENT_HEIGHT).attr('x', 1).attr('y', 1).attr('fill', 'black').attr('stroke', 'white');
+      nodeG.append('rect').attr('class', 'node').attr('x', 1).attr('y', 1).attr('width', ELEMENT_WIDTH).attr('height', ELEMENT_HEIGHT).attr('fill', 'black').attr('stroke', 'white');
 
       nodeG.append('text').attr('class', 'node').attr('fill', 'white').attr('x', '50%').attr('y', '60%').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle').text(function (d) {
         return d.value;
@@ -23923,6 +23923,24 @@ var vEBGraph = function (_React$Component) {
         return d.target.y + ELEMENT_WIDTH / 2;
       });
       links.exit().remove();
+
+      var leafNodes = bitNodes.filter(function (d) {
+        return d.left == null && d.right == null;
+      });
+      var values = veb.select('#values').selectAll('svg.value').data(leafNodes);
+      console.log(leafNodes);
+
+      var valuesG = values.enter().append('svg').attr('class', 'value').attr('x', function (d) {
+        return d.x - 1;
+      }).attr('y', function (d) {
+        return d.y - 1 + ELEMENT_HEIGHT * 2;
+      }).attr('width', ELEMENT_WIDTH + 1).attr('height', ELEMENT_HEIGHT + 1);
+
+      valuesG.append('line').attr('class', 'value').attr('x1', 1).attr('y1', ELEMENT_HEIGHT).attr('x2', ELEMENT_WIDTH).attr('y2', ELEMENT_HEIGHT).attr('fill', 'black').attr('stroke', 'white');
+
+      valuesG.append('text').attr('class', 'value').attr('fill', 'white').attr('x', '50%').attr('y', '60%').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle');
+
+      valuesG.exit().remove();
     }
   }, {
     key: 'componentDidUpdate',
@@ -23937,6 +23955,13 @@ var vEBGraph = function (_React$Component) {
       });
 
       veb.selectAll('line').attr('stroke', '#ddd');
+
+      var leafNodes = bitNodes.filter(function (d) {
+        return d.left == null && d.right == null;
+      });
+      veb.selectAll('text.value').data(leafNodes).text(function (d, i) {
+        return d.value ? i : null;
+      });
     }
   }]);
 
@@ -24200,7 +24225,6 @@ var Node = function () {
         ancestors.push({ source: curElem.parent, target: curElem });
         curElem = curElem.parent;
       }
-      console.log(ancestors);
       return ancestors;
     }
   }]);
