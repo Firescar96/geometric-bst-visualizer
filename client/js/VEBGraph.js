@@ -67,36 +67,65 @@ class vEBGraph extends React.Component {
       //align to parent  spacing between clusters
       let delta = ELEMENT_WIDTH * Math.pow(2, nodeHeight + 1);
       node.x = node == node.parent.left ? node.parent.x - delta : node.parent.x + delta;
-      node.y = node.parent.y + ELEMENT_HEIGHT * 5;
+      node.y = node.parent.y + ELEMENT_HEIGHT * 3;
     });
     console.log('bitnodes', bitNodes);
-    let node = veb.select('#nodes').selectAll('rect.element').data(bitNodes);
+    let nodes = veb.select('#nodes').selectAll('svg.node').data(bitNodes);
 
-    let nodeG = node.enter()
+    let nodeG = nodes.enter()
       .append('svg')
       .attr('class', 'node')
-      .attr('x', d => d.x)
-      .attr('y', d => d.y)
-      .attr('width', ELEMENT_WIDTH)
-      .attr('height', ELEMENT_HEIGHT);
+      .attr('x', d => d.x - 1)
+      .attr('y', d => d.y - 1)
+      .attr('width', ELEMENT_WIDTH + 1)
+      .attr('height', ELEMENT_HEIGHT + 1);
 
     nodeG.append('rect')
-      .attr('class', 'element')
+      .attr('class', 'node')
       .attr('width', ELEMENT_WIDTH)
       .attr('height', ELEMENT_HEIGHT)
-      .attr('fill', 'none')
+      .attr('x', 1)
+      .attr('y', 1)
+      .attr('fill', 'black')
       .attr('stroke', 'white');
 
     nodeG.append('text')
       .attr('class', 'node')
       .attr('fill', 'white')
       .attr('x', '50%')
-      .attr('y', '50%')
+      .attr('y', '60%')
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
       .text((d) => d.value);
 
     nodeG.exit().remove();
+
+    function linkChildren (parent) {
+      let linkList = [];
+      if(parent.left !== null) {
+        linkList.push({source: parent, target: parent.left});
+        linkList.push(...linkChildren(parent.left));
+      }
+      if(parent.right !== null) {
+        linkList.push({source: parent, target: parent.right});
+        linkList.push(...linkChildren(parent.right));
+      }
+      return linkList;
+    }
+
+    let linkList = linkChildren(treeView);
+    let links = veb.select('#links').selectAll('line').data(linkList);
+
+    links
+      .enter().append('line')
+      .attr('class', 'link')
+      .attr('stroke', '#ddd')
+      .attr('stroke-width', 5)
+      .attr('x1', d => d.source.x + ELEMENT_WIDTH / 2)
+      .attr('y1', d => d.source.y + ELEMENT_WIDTH / 2)
+      .attr('x2', d => d.target.x + ELEMENT_WIDTH / 2)
+      .attr('y2', d => d.target.y + ELEMENT_WIDTH / 2);
+    links.exit().remove();
   }
 
   componentDidUpdate () {

@@ -155,7 +155,7 @@ class Node {
 
   }
 
-  //TODO include min and max in bitvector
+  //returns a bitvector representing existing elements
   bitvector (highbits, vector) {
     highbits = highbits || 0;
     vector = vector || new Array(this.size).fill(0);
@@ -169,9 +169,10 @@ class Node {
         }
       }
     }
-
     return vector;
   }
+
+
 }
 
 module.exports = Node;

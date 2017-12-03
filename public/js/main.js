@@ -23759,6 +23759,8 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -23849,24 +23851,51 @@ var vEBGraph = function (_React$Component) {
         //align to parent  spacing between clusters
         var delta = ELEMENT_WIDTH * Math.pow(2, nodeHeight + 1);
         node.x = node == node.parent.left ? node.parent.x - delta : node.parent.x + delta;
-        node.y = node.parent.y + ELEMENT_HEIGHT * 5;
+        node.y = node.parent.y + ELEMENT_HEIGHT * 3;
       });
       console.log('bitnodes', bitNodes);
-      var node = veb.select('#nodes').selectAll('rect.element').data(bitNodes);
+      var nodes = veb.select('#nodes').selectAll('svg.node').data(bitNodes);
 
-      var nodeG = node.enter().append('svg').attr('class', 'node').attr('x', function (d) {
-        return d.x;
+      var nodeG = nodes.enter().append('svg').attr('class', 'node').attr('x', function (d) {
+        return d.x - 1;
       }).attr('y', function (d) {
-        return d.y;
-      }).attr('width', ELEMENT_WIDTH).attr('height', ELEMENT_HEIGHT);
+        return d.y - 1;
+      }).attr('width', ELEMENT_WIDTH + 1).attr('height', ELEMENT_HEIGHT + 1);
 
-      nodeG.append('rect').attr('class', 'element').attr('width', ELEMENT_WIDTH).attr('height', ELEMENT_HEIGHT).attr('fill', 'none').attr('stroke', 'white');
+      nodeG.append('rect').attr('class', 'node').attr('width', ELEMENT_WIDTH).attr('height', ELEMENT_HEIGHT).attr('x', 1).attr('y', 1).attr('fill', 'black').attr('stroke', 'white');
 
-      nodeG.append('text').attr('class', 'node').attr('fill', 'white').attr('x', '50%').attr('y', '50%').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle').text(function (d) {
+      nodeG.append('text').attr('class', 'node').attr('fill', 'white').attr('x', '50%').attr('y', '60%').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle').text(function (d) {
         return d.value;
       });
 
       nodeG.exit().remove();
+
+      function linkChildren(parent) {
+        var linkList = [];
+        if (parent.left !== null) {
+          linkList.push({ source: parent, target: parent.left });
+          linkList.push.apply(linkList, _toConsumableArray(linkChildren(parent.left)));
+        }
+        if (parent.right !== null) {
+          linkList.push({ source: parent, target: parent.right });
+          linkList.push.apply(linkList, _toConsumableArray(linkChildren(parent.right)));
+        }
+        return linkList;
+      }
+
+      var linkList = linkChildren(treeView);
+      var links = veb.select('#links').selectAll('line').data(linkList);
+
+      links.enter().append('line').attr('class', 'link').attr('stroke', '#ddd').attr('stroke-width', 5).attr('x1', function (d) {
+        return d.source.x + ELEMENT_WIDTH / 2;
+      }).attr('y1', function (d) {
+        return d.source.y + ELEMENT_WIDTH / 2;
+      }).attr('x2', function (d) {
+        return d.target.x + ELEMENT_WIDTH / 2;
+      }).attr('y2', function (d) {
+        return d.target.y + ELEMENT_WIDTH / 2;
+      });
+      links.exit().remove();
     }
   }, {
     key: 'componentDidUpdate',
@@ -24310,7 +24339,7 @@ var Node = function () {
       return (newHighBits << this.bits / 2) + this.cluster[newHighBits].max;
     }
 
-    //TODO include min and max in bitvector
+    //returns a bitvector representing existing elements
 
   }, {
     key: 'bitvector',
@@ -24327,7 +24356,6 @@ var Node = function () {
           }
         }
       }
-
       return vector;
     }
   }]);
