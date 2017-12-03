@@ -23759,6 +23759,8 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -23768,6 +23770,12 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var ELEMENT_WIDTH = 30;
 var ELEMENT_HEIGHT = 20;
 __webpack_require__(595);
+
+function sleep(ms) {
+  return new Promise(function (resolve) {
+    return setTimeout(resolve, ms);
+  });
+}
 
 var vEBGraph = function (_React$Component) {
   _inherits(vEBGraph, _React$Component);
@@ -23782,6 +23790,7 @@ var vEBGraph = function (_React$Component) {
       newElement: '',
       root: new _VEBNode2.default(4)
     };
+    window.tree = _this.state.root;
     _this.insertElement = _this.insertElement.bind(_this);
     _this.changeElement = _this.changeElement.bind(_this);
     return _this;
@@ -23795,10 +23804,29 @@ var vEBGraph = function (_React$Component) {
   }, {
     key: 'insertElement',
     value: function insertElement(event) {
+      var _this2 = this;
+
       event.preventDefault();
       var newElement = this.state.newElement;
+      this.state.root.insert(newElement);
 
-      this.setState({ newElement: '' });
+      var veb = d3.select('svg#veb');
+
+      var bitvector = this.state.root.bitvector();
+      var treeView = new _TreeView2.default(bitvector);
+      var linkList = treeView.getPath(newElement).reverse();
+
+      (async function () {
+        var links = veb.select('#links').selectAll('line');
+        for (var i = 0; i < linkList.length; i++) {
+          links.data([linkList[i]], function (d) {
+            return d.target.id;
+          }).attr('stroke', 'green');
+          await sleep(500);
+        }
+
+        _this2.setState({ newElement: '' });
+      })();
     }
   }, {
     key: 'render',
@@ -23836,7 +23864,6 @@ var vEBGraph = function (_React$Component) {
       var bitvector = this.state.root.bitvector();
       var treeView = new _TreeView2.default(bitvector);
       var bitNodes = treeView.traversal();
-      console.log('bitvector', bitNodes);
       var treeHeight = Math.log2(bitvector.length) - 1;
       bitNodes.forEach(function (node) {
         if (!node.parent) {
@@ -23848,26 +23875,68 @@ var vEBGraph = function (_React$Component) {
         var depth = treeHeight - nodeHeight;
         //align to parent  spacing between clusters
         var delta = ELEMENT_WIDTH * Math.pow(2, nodeHeight + 1);
-        console.log('delta', node.bitvector, delta, node.parent.x);
         node.x = node == node.parent.left ? node.parent.x - delta : node.parent.x + delta;
-        console.log('xpos', node.x);
-        node.y = node.parent.y + ELEMENT_HEIGHT * 5;
+        node.y = node.parent.y + ELEMENT_HEIGHT * 3;
       });
-      console.log('bitnodes', bitNodes);
-      var element = veb.select('#nodes').selectAll('rect.element').data(bitNodes);
 
-      element.enter().append('rect').attr('class', 'element').attr('x', function (d) {
-        return d.x;
+      var nodes = veb.select('#nodes').selectAll('svg.node').data(bitNodes);
+
+      var nodeG = nodes.enter().append('svg').attr('class', 'node').attr('x', function (d) {
+        return d.x - 1;
       }).attr('y', function (d) {
-        return d.y;
-      }).attr('width', ELEMENT_WIDTH).attr('height', ELEMENT_HEIGHT).attr('fill', 'none').attr('stroke', 'white');
+        return d.y - 1;
+      }).attr('width', ELEMENT_WIDTH + 1).attr('height', ELEMENT_HEIGHT + 1);
 
-      element.exit().remove();
+      nodeG.append('rect').attr('class', 'node').attr('width', ELEMENT_WIDTH).attr('height', ELEMENT_HEIGHT).attr('x', 1).attr('y', 1).attr('fill', 'black').attr('stroke', 'white');
+
+      nodeG.append('text').attr('class', 'node').attr('fill', 'white').attr('x', '50%').attr('y', '60%').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle').text(function (d) {
+        return d.value;
+      });
+
+      nodeG.exit().remove();
+
+      function linkChildren(parent) {
+        var linkList = [];
+        if (parent.left !== null) {
+          linkList.push({ source: parent, target: parent.left });
+          linkList.push.apply(linkList, _toConsumableArray(linkChildren(parent.left)));
+        }
+        if (parent.right !== null) {
+          linkList.push({ source: parent, target: parent.right });
+          linkList.push.apply(linkList, _toConsumableArray(linkChildren(parent.right)));
+        }
+        return linkList;
+      }
+
+      var linkList = linkChildren(treeView);
+      var links = veb.select('#links').selectAll('line').data(linkList, function (d) {
+        return d.target.id;
+      });
+
+      links.enter().append('line').attr('class', 'link').attr('stroke', '#ddd').attr('stroke-width', 5).attr('x1', function (d) {
+        return d.source.x + ELEMENT_WIDTH / 2;
+      }).attr('y1', function (d) {
+        return d.source.y + ELEMENT_WIDTH / 2;
+      }).attr('x2', function (d) {
+        return d.target.x + ELEMENT_WIDTH / 2;
+      }).attr('y2', function (d) {
+        return d.target.y + ELEMENT_WIDTH / 2;
+      });
+      links.exit().remove();
     }
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
-      //TODO
+      var veb = d3.select('svg#veb');
+      //console.log(this.state.root);
+      var bitvector = this.state.root.bitvector();
+      var treeView = new _TreeView2.default(bitvector);
+      var bitNodes = treeView.traversal();
+      veb.selectAll('text.node').data(bitNodes).text(function (d) {
+        return d.value;
+      });
+
+      veb.selectAll('line').attr('stroke', '#ddd');
     }
   }]);
 
@@ -24086,16 +24155,17 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Node = function () {
-  function Node(bitvector) {
+  function Node(bitvector, id) {
     _classCallCheck(this, Node);
 
     this.bitvector = bitvector;
+    this.id = id || '0';
     if (bitvector.length == 1) {
       this.value = bitvector[0];
       this.left = this.right = null;
     } else {
-      this.left = new Node(bitvector.slice(0, bitvector.length / 2));
-      this.right = new Node(bitvector.slice(bitvector.length / 2));
+      this.left = new Node(bitvector.slice(0, bitvector.length / 2), this.id + '0');
+      this.right = new Node(bitvector.slice(bitvector.length / 2), this.id + '1');
       this.value = this.left.value || this.right.value;
       this.left.parent = this;
       this.right.parent = this;
@@ -24103,7 +24173,7 @@ var Node = function () {
   }
 
   _createClass(Node, [{
-    key: "traversal",
+    key: 'traversal',
     value: function traversal() {
       var elements = [];
       elements.push(this);
@@ -24111,6 +24181,27 @@ var Node = function () {
       if (this.right !== null) elements.push.apply(elements, _toConsumableArray(this.right.traversal()));
 
       return elements;
+    }
+  }, {
+    key: 'getPath',
+    value: function getPath(value) {
+      var bits = this.bitvector.length;
+      if (bits > 1) {
+        var lowBits = value & bits / 2 - 1;
+        if (value < bits / 2) {
+          return this.left.getPath(lowBits);
+        }
+        return this.right.getPath(lowBits);
+      }
+
+      var ancestors = [];
+      var curElem = this;
+      while (curElem.parent !== undefined) {
+        ancestors.push({ source: curElem.parent, target: curElem });
+        curElem = curElem.parent;
+      }
+      console.log(ancestors);
+      return ancestors;
     }
   }]);
 
@@ -24127,8 +24218,6 @@ exports.default = Node;
 
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -24174,6 +24263,7 @@ var Node = function () {
     }
 
     //inserts a key
+    //TODO: don't reinsert repeated keys
 
   }, {
     key: 'insert',
@@ -24203,6 +24293,7 @@ var Node = function () {
           highBits = _nextLevelInsert >> this.bits / 2;
           lowBits = _nextLevelInsert & (1 << this.bits / 2) - 1;
         }
+        console.log(this.cluster, highBits);
         if (this.cluster[highBits].min === null) {
           this.summary.insert(highBits);
         }
@@ -24299,22 +24390,23 @@ var Node = function () {
       return (newHighBits << this.bits / 2) + this.cluster[newHighBits].max;
     }
 
-    //TODO include min and max in bitvector
+    //returns a bitvector representing existing elements
 
   }, {
     key: 'bitvector',
-    value: function bitvector() {
-      var vector = [];
-      var agenda = [this];
-      while (agenda.length > 0) {
-        var element = agenda.shift();
-        if (element.summary) {
-          agenda.push.apply(agenda, _toConsumableArray(element.cluster));
-        } else {
-          vector.push.apply(vector, _toConsumableArray(element.cluster));
+    value: function bitvector(highbits, vector) {
+      highbits = highbits || 0;
+      vector = vector || new Array(this.size).fill(0);
+      if (this.min !== null) vector[highbits | this.min] = 1;
+      if (this.max !== null) vector[highbits | this.max] = 1;
+      if (this.summary) {
+        var summaryBitvector = this.summary.bitvector();
+        for (var i = 0; i < summaryBitvector.length; i++) {
+          if (summaryBitvector[i]) {
+            this.cluster[i].bitvector(highbits | i << this.bits / 2, vector);
+          }
         }
       }
-
       return vector;
     }
   }]);

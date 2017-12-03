@@ -35,6 +35,7 @@ class Node {
   }
 
   //inserts a key
+  //TODO: don't reinsert repeated keys
   insert (key) {
     if(this.bits == 1) {
       this.cluster[key] = 1;
@@ -61,6 +62,7 @@ class Node {
         highBits = nextLevelInsert >> this.bits / 2;
         lowBits = nextLevelInsert & ((1 << this.bits / 2) - 1);
       }
+      console.log(this.cluster, highBits);
       if(this.cluster[highBits].min === null) {
         this.summary.insert(highBits);
       }
@@ -153,19 +155,20 @@ class Node {
 
   }
 
-  //TODO include min and max in bitvector
-  bitvector () {
-    let vector = [];
-    let agenda = [this];
-    while(agenda.length > 0) {
-      let element = agenda.shift();
-      if(element.summary) {
-        agenda.push(...element.cluster);
-      }else {
-        vector.push(...element.cluster);
+  //returns a bitvector representing existing elements
+  bitvector (highbits, vector) {
+    highbits = highbits || 0;
+    vector = vector || new Array(this.size).fill(0);
+    if(this.min !== null) vector[highbits | this.min] = 1;
+    if(this.max !== null) vector[highbits | this.max] = 1;
+    if(this.summary) {
+      let summaryBitvector = this.summary.bitvector();
+      for(var i = 0; i < summaryBitvector.length; i++) {
+        if(summaryBitvector[i]) {
+          this.cluster[i].bitvector(highbits | (i << this.bits / 2), vector);
+        }
       }
     }
-
     return vector;
   }
 }
