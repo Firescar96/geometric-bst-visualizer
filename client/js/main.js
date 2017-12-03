@@ -2,7 +2,7 @@ import Home from './Home.js';
 import VEBGraph from './VEBGraph';
 import React from 'react';
 import { render } from 'react-dom';
-import { BrowserRouter, Route } from 'react-router-dom';
+import { HashRouter, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { combineReducers, createStore } from 'redux';
 import { standardBSTReducer } from './StandardBSTGraph';
@@ -17,15 +17,11 @@ export {store}; //exported here so it's available in all the subcompnents
 
 render((
   <Provider store={store}>
-    <BrowserRouter>
+    <HashRouter>
       <div>
         <Route exact path="/" component={Home}/>
         <Route path="/veb" component={VEBGraph}/>
-        <Route path="/geometric-bst-visualizer/">
-          <Route exact path="/" component={Home}/>
-          <Route path="/veb" component={VEBGraph}/>
-        </Route>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   </Provider>
 ), document.getElementById('root'));
