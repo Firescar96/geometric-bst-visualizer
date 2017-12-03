@@ -171,8 +171,6 @@ class Node {
     }
     return vector;
   }
-
-
 }
 
 module.exports = Node;

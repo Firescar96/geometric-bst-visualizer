@@ -23771,6 +23771,12 @@ var ELEMENT_WIDTH = 30;
 var ELEMENT_HEIGHT = 20;
 __webpack_require__(595);
 
+function sleep(ms) {
+  return new Promise(function (resolve) {
+    return setTimeout(resolve, ms);
+  });
+}
+
 var vEBGraph = function (_React$Component) {
   _inherits(vEBGraph, _React$Component);
 
@@ -23798,10 +23804,29 @@ var vEBGraph = function (_React$Component) {
   }, {
     key: 'insertElement',
     value: function insertElement(event) {
+      var _this2 = this;
+
       event.preventDefault();
       var newElement = this.state.newElement;
       this.state.root.insert(newElement);
-      this.setState({ newElement: '' });
+
+      var veb = d3.select('svg#veb');
+
+      var bitvector = this.state.root.bitvector();
+      var treeView = new _TreeView2.default(bitvector);
+      var linkList = treeView.getPath(newElement).reverse();
+
+      (async function () {
+        var links = veb.select('#links').selectAll('line');
+        for (var i = 0; i < linkList.length; i++) {
+          links.data([linkList[i]], function (d) {
+            return d.target.id;
+          }).attr('stroke', 'green');
+          await sleep(500);
+        }
+
+        _this2.setState({ newElement: '' });
+      })();
     }
   }, {
     key: 'render',
@@ -23853,7 +23878,7 @@ var vEBGraph = function (_React$Component) {
         node.x = node == node.parent.left ? node.parent.x - delta : node.parent.x + delta;
         node.y = node.parent.y + ELEMENT_HEIGHT * 3;
       });
-      console.log('bitnodes', bitNodes);
+
       var nodes = veb.select('#nodes').selectAll('svg.node').data(bitNodes);
 
       var nodeG = nodes.enter().append('svg').attr('class', 'node').attr('x', function (d) {
@@ -23884,7 +23909,9 @@ var vEBGraph = function (_React$Component) {
       }
 
       var linkList = linkChildren(treeView);
-      var links = veb.select('#links').selectAll('line').data(linkList);
+      var links = veb.select('#links').selectAll('line').data(linkList, function (d) {
+        return d.target.id;
+      });
 
       links.enter().append('line').attr('class', 'link').attr('stroke', '#ddd').attr('stroke-width', 5).attr('x1', function (d) {
         return d.source.x + ELEMENT_WIDTH / 2;
@@ -23908,6 +23935,8 @@ var vEBGraph = function (_React$Component) {
       veb.selectAll('text.node').data(bitNodes).text(function (d) {
         return d.value;
       });
+
+      veb.selectAll('line').attr('stroke', '#ddd');
     }
   }]);
 
@@ -24126,16 +24155,17 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Node = function () {
-  function Node(bitvector) {
+  function Node(bitvector, id) {
     _classCallCheck(this, Node);
 
     this.bitvector = bitvector;
+    this.id = id || '0';
     if (bitvector.length == 1) {
       this.value = bitvector[0];
       this.left = this.right = null;
     } else {
-      this.left = new Node(bitvector.slice(0, bitvector.length / 2));
-      this.right = new Node(bitvector.slice(bitvector.length / 2));
+      this.left = new Node(bitvector.slice(0, bitvector.length / 2), this.id + '0');
+      this.right = new Node(bitvector.slice(bitvector.length / 2), this.id + '1');
       this.value = this.left.value || this.right.value;
       this.left.parent = this;
       this.right.parent = this;
@@ -24143,7 +24173,7 @@ var Node = function () {
   }
 
   _createClass(Node, [{
-    key: "traversal",
+    key: 'traversal',
     value: function traversal() {
       var elements = [];
       elements.push(this);
@@ -24151,6 +24181,27 @@ var Node = function () {
       if (this.right !== null) elements.push.apply(elements, _toConsumableArray(this.right.traversal()));
 
       return elements;
+    }
+  }, {
+    key: 'getPath',
+    value: function getPath(value) {
+      var bits = this.bitvector.length;
+      if (bits > 1) {
+        var lowBits = value & bits / 2 - 1;
+        if (value < bits / 2) {
+          return this.left.getPath(lowBits);
+        }
+        return this.right.getPath(lowBits);
+      }
+
+      var ancestors = [];
+      var curElem = this;
+      while (curElem.parent !== undefined) {
+        ancestors.push({ source: curElem.parent, target: curElem });
+        curElem = curElem.parent;
+      }
+      console.log(ancestors);
+      return ancestors;
     }
   }]);
 

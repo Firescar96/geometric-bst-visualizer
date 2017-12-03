@@ -6,6 +6,10 @@ const ELEMENT_WIDTH = 30;
 const ELEMENT_HEIGHT = 20;
 require('../sass/veb.scss');
 
+function sleep (ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 class vEBGraph extends React.Component {
   constructor () {
     super();
@@ -27,7 +31,23 @@ class vEBGraph extends React.Component {
     event.preventDefault();
     let newElement = this.state.newElement;
     this.state.root.insert(newElement);
-    this.setState({newElement: ''});
+
+    let veb = d3.select('svg#veb');
+
+    let bitvector = this.state.root.bitvector();
+    let treeView = new TreeView(bitvector);
+    let linkList = treeView.getPath(newElement).reverse();
+
+      (async () => {
+        let links = veb.select('#links').selectAll('line');
+        for(var i =0; i < linkList.length; i++) {
+          links.data([linkList[i]], d => d.target.id)
+           .attr('stroke', 'green')
+          await sleep(500);
+        }
+
+        this.setState({newElement: ''});
+      })()
   }
 
   render () {
@@ -69,7 +89,7 @@ class vEBGraph extends React.Component {
       node.x = node == node.parent.left ? node.parent.x - delta : node.parent.x + delta;
       node.y = node.parent.y + ELEMENT_HEIGHT * 3;
     });
-    console.log('bitnodes', bitNodes);
+
     let nodes = veb.select('#nodes').selectAll('svg.node').data(bitNodes);
 
     let nodeG = nodes.enter()
@@ -114,7 +134,7 @@ class vEBGraph extends React.Component {
     }
 
     let linkList = linkChildren(treeView);
-    let links = veb.select('#links').selectAll('line').data(linkList);
+    let links = veb.select('#links').selectAll('line').data(linkList, d => d.target.id);
 
     links
       .enter().append('line')
@@ -136,6 +156,9 @@ class vEBGraph extends React.Component {
     let bitNodes = treeView.traversal();
     veb.selectAll('text.node').data(bitNodes)
       .text((d) => d.value);
+
+    veb.selectAll('line')
+      .attr('stroke', '#ddd')
   }
 }
 
