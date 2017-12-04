@@ -1,5 +1,9 @@
 #standardBSTGraph span.label {
   padding: 10px; }
+
+#standardBSTGraph .graph svg {
+  width: 100%;
+  height: 100%; }
 main#bst {
   width: 100%;
   height: 100%;
