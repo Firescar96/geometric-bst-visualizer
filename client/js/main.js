@@ -1,5 +1,6 @@
-import Home from './Home.js';
+import BST from './BST.js';
 import VEBGraph from './VEBGraph';
+import Navbar from './Navbar';
 import React from 'react';
 import { render } from 'react-dom';
 import { HashRouter, Route } from 'react-router-dom';
@@ -19,7 +20,8 @@ render((
   <Provider store={store}>
     <HashRouter>
       <div>
-        <Route exact path="/" component={Home}/>
+        <Navbar />
+        <Route exact path="/" component={BST}/>
         <Route path="/veb" component={VEBGraph}/>
       </div>
     </HashRouter>

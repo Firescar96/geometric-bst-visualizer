@@ -18,10 +18,12 @@ class Node {
   //inserts a key and rebalances
   //returns number of new children
   insert (key, value, rebalance = true) {
+    key = String(key);
     value = value || key;
     if(key == this.key)return 0;
 
-    if(key < this.key) {
+    console.log(key);
+    if(key.localeCompare(this.key) == -1) {
       if(this.left === null) {
         this.numLeftChildren++;
         this.left = new Node(key, value, this);
@@ -30,7 +32,7 @@ class Node {
       }
       this.height = Math.max(this.height, 1 + this.left.height);
     }
-    if(key >= this.key) {
+    if(key.localeCompare(this.key) >= 0) {
       if(this.right === null) {
         this.numRightChildren++;
         this.right = new Node(key, value, this);
@@ -183,7 +185,7 @@ class Node {
   find (key) {
     if(key == this.key) {
       return this;
-    }else if(key < this.key) {
+    }else if(key.localeCompare(this.key) == -1) {
       return this.numLeftChildren > 0 ? this.left.find(key) : null;
     }
 

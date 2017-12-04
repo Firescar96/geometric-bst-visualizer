@@ -38,21 +38,22 @@ class vEBGraph extends React.Component {
     let treeView = new TreeView(bitvector);
     let linkList = treeView.getPath(newElement).reverse();
 
-      (async () => {
-        let links = veb.select('#links').selectAll('line');
-        for(var i =0; i < linkList.length; i++) {
-          links.data([linkList[i]], d => d.target.id)
-           .attr('stroke', 'green')
-          await sleep(500);
-        }
+    (async () => {
+      let links = veb.select('#links').selectAll('line');
+      for(var i =0; i < linkList.length; i++) {
+        links.data([linkList[i]], d => d.target.id)
+         .attr('stroke', 'green')
+        await sleep(500);
+      }
 
-        this.setState({newElement: ''});
-      })()
+      this.setState({newElement: ''});
+    })()
   }
 
   render () {
     return (
       <main id="veb">
+        <h1 id="title">vEB Tree View</h1>
         <form onSubmit={this.insertElement}>
           Insert an element
           <input value={this.state.newElement} onChange={this.changeElement}></input>
@@ -99,7 +100,7 @@ class vEBGraph extends React.Component {
       .attr('x', d => d.x - 1)
       .attr('y', d => d.y - 1)
       .attr('width', ELEMENT_WIDTH + 1)
-      .attr('height', ELEMENT_HEIGHT + 1);
+      .attr('height', ELEMENT_HEIGHT + 2);
 
     nodeG.append('rect')
       .attr('class', 'node')

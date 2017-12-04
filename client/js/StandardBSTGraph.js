@@ -24,16 +24,13 @@ function standardBSTReducer (state, action) {
         nonce: ++state.nonce,
       });
     case INSERT_NODE:
-      let newElement = isNaN(action.newElement) ?
-        parseInt(action.newElement.split('').map(x => x.charCodeAt(0)).reduce((x, y) => x + y, '')) :
-        parseFloat(action.newElement);
       if(state.root === null) {
         return Object.assign({}, state, {
-          root: new Node(newElement, action.newElement),
+          root: new Node(action.newElement, action.newElement),
           nonce: ++state.nonce,
         });
       }
-      state.root.insert(newElement, action.newElement, state.rebalance);
+      state.root.insert(action.newElement, action.newElement, state.rebalance);
       return Object.assign({}, state, {
         nonce: ++state.nonce,
       });
@@ -91,8 +88,6 @@ class StandardBSTGraph extends React.Component {
   componentDidMount () {
     let standard = d3.select('#standard');
     this.simulation
-      .force('collision', d3.forceCollide().radius(NODE_RADIUS + 5))
-      .force('manyBody', d3.forceManyBody().strength(1))
       .on('tick', () => {
         standard.selectAll('svg.node').transition()
           .ease(v => d3.easeSinIn(v))
@@ -188,6 +183,9 @@ class StandardBSTGraph extends React.Component {
       .text((d) => d.value);
 
     node.exit().remove();
+    this.simulation.nodes(nodes)
+      .alpha(1)
+      .restart();
   }
 }
 

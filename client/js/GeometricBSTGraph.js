@@ -20,10 +20,7 @@ function geometricBSTReducer (state, action) {
       if(action.point !== undefined) {
         state.root.insert(action.point);
       }else if(action.newElement !== undefined) {
-        let newElement = isNaN(action.newElement) ?
-          parseInt(action.newElement.split('').map(x => x.charCodeAt(0)).reduce((x, y) => x + y, '')) :
-          parseFloat(action.newElement);
-        state.root.insert(newElement, action.newElement);
+        state.root.insert(action.newElement, action.newElement);
       }
       return Object.assign({}, state, {
         nonce: ++state.nonce,
@@ -111,39 +108,39 @@ class GeometricBSTGraph extends React.Component {
     let xDomainIdxs = points.map(x => (x.key)).map((x, i, a) => a.indexOf(x)).filter((x, i, a) => a.indexOf(x) == i);
     let xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
     //the domain is over all keys, pruning for duplicates
-      .domain(xDomainIdxs.map(x => points[x].key));
+      .domain(xDomainIdxs.map(x => points[x].key))
+      .padding(1);
     let yDomain = points.map(d => d.time).filter((x, i, a) => a.indexOf(x) == i).sort((a, b) => a < b ? 1 : -1);
     let yRange = d3.scalePoint().range([heightMargin, height - heightMargin])
-      .domain(yDomain);
-
-    for(var time = 1; time <= this.props.root.maxTime; time++) {
-      let satisfiedPoints = this.props.root.runGreedyAlgorithm(time);
-      let satisfyRect = geometric.selectAll('rect.satisfier')
-        .data(satisfiedPoints);
-      satisfyRect.enter()
-        .append('rect')
-        .attr('x', d => xRange(d.base.key))
-        .attr('y', d => yRange(d.base.time))
-        .transition()
-        .duration(500)
-        .attr('transform', d => {
-          let satisfiedWidth = Math.abs(xRange(d.base.key) - xRange(d.satisfied.key));
-          let satisfiedHeight = Math.abs(yRange(d.base.time) - yRange(d.satisfied.time));
-          if(d.satisfied.key < d.base.key) {
-            return 'translate(' + -satisfiedWidth
-             + ',' + -satisfiedHeight + ')';
-          }
-          return 'translate(0,' + -satisfiedHeight + ')';
-        })
-        .attr('class', 'satisfier')
-        .attr('stroke', 'green')
-        .attr('fill', 'none')
-        .attr('width', d => Math.abs(xRange(d.base.key) - xRange(d.satisfied.key)))
-        .attr('height', d => Math.abs(yRange(d.base.time) - yRange(d.satisfied.time)))
-        .transition()
-        .delay(100)
-        .remove();
-    }
+      .domain(yDomain)
+      .padding(1);
+    let satisfierRects = this.props.root.runGreedyAlgorithm();
+    let satisfyRect = geometric.selectAll('rect.satisfier')
+      .data(satisfierRects);
+    satisfyRect.enter()
+      .append('rect')
+      .attr('x', d => xRange(d.base.key))
+      .attr('y', d => yRange(d.base.time))
+      .transition()
+      .delay(d => 500 * d.satisfier.delay)
+      .duration(500)
+      .attr('transform', d => {
+        let satisfiedWidth = Math.abs(xRange(d.base.key) - xRange(d.satisfied.key));
+        let satisfiedHeight = Math.abs(yRange(d.base.time) - yRange(d.satisfied.time));
+        if(d.satisfied.key < d.base.key) {
+          return 'translate(' + -satisfiedWidth
+                 + ',' + -satisfiedHeight + ')';
+        }
+        return 'translate(0,' + -satisfiedHeight + ')';
+      })
+      .attr('class', 'satisfier')
+      .attr('stroke', 'green')
+      .attr('fill', 'none')
+      .attr('width', d => Math.abs(xRange(d.base.key) - xRange(d.satisfied.key)))
+      .attr('height', d => Math.abs(yRange(d.base.time) - yRange(d.satisfied.time)))
+      .transition()
+      .delay(500)
+      .remove();
     this.componentDidUpdate();
   }
   render () {
@@ -173,10 +170,12 @@ class GeometricBSTGraph extends React.Component {
     let xDomainIdxs = points.map(x => (x.key)).map((x, i, a) => a.indexOf(x)).filter((x, i, a) => a.indexOf(x) == i);
     let xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
     //the domain is over all keys, pruning for duplicates
-      .domain(xDomainIdxs.map(x => points[x].key));
+      .domain(xDomainIdxs.map(x => points[x].key))
+      .padding(1);
     let yDomain = points.map(d => d.time).filter((x, i, a) => a.indexOf(x) == i).sort((a, b) => a < b ? 1 : -1);
     let yRange = d3.scalePoint().range([heightMargin, height - heightMargin])
-      .domain(yDomain);
+      .domain(yDomain)
+      .padding(1);
 
     let xAxis = d3.axisBottom(xRange)
       .tickFormat((d, i) => points[xDomainIdxs[i]].value);
@@ -200,7 +199,7 @@ class GeometricBSTGraph extends React.Component {
       .attr('opacity', d => d.isSatisfier ? 0 : 1)
       .transition()
       .duration(200)
-      .delay(d => d.isSatisfier ? 500 : 0)
+      .delay(d => d.isSatisfier ? 500 * (d.delay + 1) : 0)
       .attr('opacity', 1);
     point.exit().remove();
     point.transition()
@@ -235,13 +234,27 @@ class GeometricBSTGraph extends React.Component {
     let height = geometric.node().getBoundingClientRect().height;
     let heightMargin = height / 5;
 
+
+    let xRange = d3.scalePoint().range([widthMargin, width - widthMargin]);
+    let yRange = d3.scalePoint().range([heightMargin, height - heightMargin]);
+    let xAxis = d3.axisBottom(xRange);
+    let yAxis = d3.axisLeft(yRange);
+
     geometric.append('g')
       .attr('class', 'xAxis')
-      .attr('transform', 'translate(0,' + (height - heightMargin) + ')');
+      .attr('transform', 'translate(0,' + (height - heightMargin) + ')')
+      .call(xAxis);
 
     geometric.append('g')
       .attr('class', 'yAxis')
-      .attr('transform', 'translate(' + (widthMargin) + ',0)');
+      .attr('transform', 'translate(' + (widthMargin) + ',0)')
+      .call(yAxis);
+
+    geometric.selectAll('g.xAxis')
+      .call(xAxis);
+
+    geometric.selectAll('g.yAxis')
+      .call(yAxis);
 
     let yLabelX = widthMargin - 40;
     let yLabelY = height / 2;

@@ -3,14 +3,14 @@ import { connect } from 'react-redux';
 import StandardBSTGraph from './StandardBSTGraph.js';
 import GeometricBSTGraph from './GeometricBSTGraph.js';
 import {store} from './main.js';
-require('../sass/home.scss');
+require('../sass/bst.scss');
 import {INSERT_NODE, ADD_POINT} from './constants';
 
 function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-class Home extends React.Component {
+class BST extends React.Component {
   constructor () {
     super();
     this.state = {
@@ -97,8 +97,8 @@ class Home extends React.Component {
   }
   render () {
     return (
-      <main id="home">
-        <h1 id="title">Binary Search Tree Visualizer</h1>
+      <main id="bst">
+        <h1 id="title">BST Visualizer</h1>
         <div id="graphTitles">
           <div>
             <h2>Standard View</h2>
@@ -108,9 +108,9 @@ class Home extends React.Component {
         <form id="insertElement" onSubmit={this.insertElement}>
             Insert an element
           <input value={this.state.newElement} onChange={this.changeElement}></input>
-          <button type="submit">Insert</button>
-          <button onClick={this.insertSequence1}>Sequence 1</button>
-          <button onClick={this.insertSequence2}>Sequence 2</button>
+          <button id="insert" type="submit">Insert</button>
+          <button id="sequence1" onClick={this.insertSequence1}>Sequence 1</button>
+          <button id="sequence2" onClick={this.insertSequence2}>Sequence 2</button>
         </form>
         <div id="inserts">
           <h4>Enable Inserts:</h4>
@@ -136,4 +136,4 @@ class Home extends React.Component {
   }
 }
 
-export default Home;
+export default BST;
