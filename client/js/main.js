@@ -1,8 +1,9 @@
-import Home from './Home.js';
+import BST from './BST.js';
 import VEBGraph from './VEBGraph';
+import Navbar from './Navbar';
 import React from 'react';
 import { render } from 'react-dom';
-import { BrowserRouter, Route } from 'react-router-dom';
+import { HashRouter, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { combineReducers, createStore } from 'redux';
 import { standardBSTReducer } from './StandardBSTGraph';
@@ -17,11 +18,12 @@ export {store}; //exported here so it's available in all the subcompnents
 
 render((
   <Provider store={store}>
-    <BrowserRouter>
+    <HashRouter>
       <div>
-        <Route exact path="/" component={Home}/>
+        <Navbar />
+        <Route exact path="/" component={BST}/>
         <Route path="/veb" component={VEBGraph}/>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   </Provider>
 ), document.getElementById('root'));

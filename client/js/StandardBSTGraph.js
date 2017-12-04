@@ -24,16 +24,13 @@ function standardBSTReducer (state, action) {
         nonce: ++state.nonce,
       });
     case INSERT_NODE:
-      let newElement = isNaN(action.newElement) ?
-        parseInt(action.newElement.split('').map(x => x.charCodeAt(0)).reduce((x, y) => x + y, '')) :
-        parseFloat(action.newElement);
       if(state.root === null) {
         return Object.assign({}, state, {
-          root: new Node(newElement, action.newElement),
+          root: new Node(action.newElement, action.newElement),
           nonce: ++state.nonce,
         });
       }
-      state.root.insert(newElement, action.newElement, state.rebalance);
+      state.root.insert(action.newElement, action.newElement, state.rebalance);
       return Object.assign({}, state, {
         nonce: ++state.nonce,
       });
@@ -88,10 +85,15 @@ class StandardBSTGraph extends React.Component {
   }
 
   componentDidMount () {
-    let standard = d3.select('#standard');
+    var zoom = d3.zoom()
+      .on('zoom', () => {
+        d3.select('#nodes').attr('transform', d3.event.transform);
+        d3.select('#links').attr('transform', d3.event.transform);
+      });
+    let standard = d3.select('#standard')
+      .call(zoom);
+
     this.simulation
-      .force('collision', d3.forceCollide().radius(NODE_RADIUS + 5))
-      .force('manyBody', d3.forceManyBody().strength(1))
       .on('tick', () => {
         standard.selectAll('svg.node').transition()
           .ease(v => d3.easeSinIn(v))
@@ -170,11 +172,9 @@ class StandardBSTGraph extends React.Component {
 
     nodeG
       .append('circle')
-      .attr('class', 'node')
-      .attr('stroke', 'white')
       .attr('cx', '50%')
       .attr('cy', '50%')
-      .attr('r', 20);
+      .attr('r', 19);
 
     nodeG
       .append('text')
@@ -186,10 +186,25 @@ class StandardBSTGraph extends React.Component {
       .attr('alignment-baseline', 'middle')
       .text((d) => d.value);
 
+    nodeG
+      .append('circle')
+      .attr('class', 'node')
+      .attr('stroke', 'green')
+      .attr('cx', '50%')
+      .attr('cy', '50%')
+      .attr('fill', 'transparent')
+      .attr('r', 19)
+      .on('click', (d1) => {
+        d3.selectAll('circle.node')
+          .attr('stroke', d2 => d1.key == d2.key ? 'green' : null);
+        store.dispatch({ type: ADD_POINT, newElement: d1.key });
+      });
+
     node.exit().remove();
+    d3.selectAll('circle.node')
+      .attr('stroke', d => this.props.root.lastTouched.key == d.key ? 'green' : null);
 
     this.simulation.nodes(nodes)
-      .force('link', d3.forceLink(linkList).strength(0.5).distance(100))
       .alpha(1)
       .restart();
   }

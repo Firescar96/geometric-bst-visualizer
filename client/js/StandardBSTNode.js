@@ -13,15 +13,21 @@ class Node {
     this.id = '' + Math.random(); //used to uniquely identify nodes when displaying with d3
     this.x = 0;  //used by d3 to represent the x position of the element
     this.y = 0; //used by d3 to represent the y position of the element
+    this.lastTouched = this; //used by d3 to select the last touched node
   }
 
   //inserts a key and rebalances
   //returns number of new children
   insert (key, value, rebalance = true) {
+    key = String(key);
     value = value || key;
-    if(key == this.key)return 0;
+    if(key == this.key) {
+      this.lastTouched = this;
+      return 0;
+    }
 
-    if(key < this.key) {
+    console.log(key);
+    if(key.localeCompare(this.key) == -1) {
       if(this.left === null) {
         this.numLeftChildren++;
         this.left = new Node(key, value, this);
@@ -29,8 +35,9 @@ class Node {
         this.numLeftChildren += this.left.insert(key, value, rebalance);
       }
       this.height = Math.max(this.height, 1 + this.left.height);
+      this.lastTouched = this.left.lastTouched;
     }
-    if(key >= this.key) {
+    if(key.localeCompare(this.key) >= 0) {
       if(this.right === null) {
         this.numRightChildren++;
         this.right = new Node(key, value, this);
@@ -38,6 +45,7 @@ class Node {
         this.numRightChildren += this.right.insert(key, value, rebalance);
       }
       this.height = Math.max(this.height, 1 + this.right.height);
+      this.lastTouched = this.right.lastTouched;
     }
 
     if(rebalance) {
@@ -183,7 +191,7 @@ class Node {
   find (key) {
     if(key == this.key) {
       return this;
-    }else if(key < this.key) {
+    }else if(key.localeCompare(this.key) == -1) {
       return this.numLeftChildren > 0 ? this.left.find(key) : null;
     }
 
