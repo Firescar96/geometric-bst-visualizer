@@ -154,12 +154,7 @@ class GeometricBSTGraph extends React.Component {
   }
   componentDidUpdate () {
     let points = this.props.root.points.sort((a, b) => {
-      if(isNaN(a.key)) {
-        return a.key.localeCompare(b.key);
-      }else if(isNaN(b.key)) {
-        return -1 * b.key.localeCompare(a.key);
-      }
-      return a.key <= b.key ? -1 : 1;
+      return a.key.localeCompare(b.key);
     });
     let geometric = d3.select('#geometric');
     let width = geometric.node().getBoundingClientRect().width;
@@ -191,7 +186,7 @@ class GeometricBSTGraph extends React.Component {
     point.enter()
       .append('circle')
       .attr('class', 'point')
-      .attr('fill', d => d.isSatisfier ? 'red' : 'white')
+      .attr('fill', (d, i) => d.isSatisfier ? 'red' : d == this.props.root.lastTouched ? 'green' : 'white')
       .attr('cx', d => xRange(d.key))
       .attr('cy', d => yRange(d.time))
       .attr('r', 5)
@@ -205,7 +200,7 @@ class GeometricBSTGraph extends React.Component {
     point.transition()
       .duration(200)
       .ease(v => d3.easeSinIn(v))
-      .attr('fill', d => d.isSatisfier ? 'red' : 'white')
+      .attr('fill', (d, i) => d.isSatisfier ? 'red' : d == this.props.root.lastTouched ? 'green' : 'white')
       .attr('cx', d => xRange(d.key))
       .attr('cy', d => yRange(d.time))
       .attr('opacity', 1);

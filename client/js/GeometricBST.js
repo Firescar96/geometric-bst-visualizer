@@ -16,17 +16,20 @@ class GemetricBST {
     this.maxSatisfiedTime = 1;
     //for display purposes need to track how many points created each iteration of greedy algorithm
     this.numIterationSatisfiers = 0;
+    this.lastTouched = null; //needed for d3 to hightlight the most recent point
   }
 
   insert (key, value) {
     if(key instanceof Point) {
       this.points.push(key);
       this.maxTime = Math.max(this.maxTime, key.time);
+      this.lastTouched = key;
     }else {
       key = String(key);
       let newElement = new Point(key, value, this.maxTime + 1);
       this.points.push(newElement);
       this.maxTime++;
+      this.lastTouched = newElement;
     }
   }
   //takes an optional parameter for what subset of times (0 - maxTime) to look at

@@ -5420,7 +5420,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.store = undefined;
 
-var _BST = __webpack_require__(752);
+var _BST = __webpack_require__(294);
 
 var _BST2 = _interopRequireDefault(_BST);
 
@@ -13195,13 +13195,10 @@ var GeometricBSTGraph = function (_React$Component) {
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
+      var _this2 = this;
+
       var points = this.props.root.points.sort(function (a, b) {
-        if (isNaN(a.key)) {
-          return a.key.localeCompare(b.key);
-        } else if (isNaN(b.key)) {
-          return -1 * b.key.localeCompare(a.key);
-        }
-        return a.key <= b.key ? -1 : 1;
+        return a.key.localeCompare(b.key);
       });
       var geometric = d3.select('#geometric');
       var width = geometric.node().getBoundingClientRect().width;
@@ -13242,8 +13239,8 @@ var GeometricBSTGraph = function (_React$Component) {
       var point = geometric.selectAll('circle.point').data(points, function (d) {
         return d.key + ':' + d.time;
       });
-      point.enter().append('circle').attr('class', 'point').attr('fill', function (d) {
-        return d.isSatisfier ? 'red' : 'white';
+      point.enter().append('circle').attr('class', 'point').attr('fill', function (d, i) {
+        return d.isSatisfier ? 'red' : d == _this2.props.root.lastTouched ? 'green' : 'white';
       }).attr('cx', function (d) {
         return xRange(d.key);
       }).attr('cy', function (d) {
@@ -13256,8 +13253,8 @@ var GeometricBSTGraph = function (_React$Component) {
       point.exit().remove();
       point.transition().duration(200).ease(function (v) {
         return d3.easeSinIn(v);
-      }).attr('fill', function (d) {
-        return d.isSatisfier ? 'red' : 'white';
+      }).attr('fill', function (d, i) {
+        return d.isSatisfier ? 'red' : d == _this2.props.root.lastTouched ? 'green' : 'white';
       }).attr('cx', function (d) {
         return xRange(d.key);
       }).attr('cy', function (d) {
@@ -13464,8 +13461,7 @@ var StandardBSTGraph = function (_React$Component) {
           'svg',
           { id: 'standard', className: 'graph' },
           _react2.default.createElement('g', { id: 'links' }),
-          _react2.default.createElement('g', { id: 'nodes' }),
-          _react2.default.createElement('g', { id: 'values' })
+          _react2.default.createElement('g', { id: 'nodes' })
         )
       );
     }
@@ -13474,7 +13470,12 @@ var StandardBSTGraph = function (_React$Component) {
     value: function componentDidMount() {
       var _this2 = this;
 
-      var standard = d3.select('#standard');
+      var zoom = d3.zoom().on('zoom', function () {
+        d3.select('#nodes').attr('transform', d3.event.transform);
+        d3.select('#links').attr('transform', d3.event.transform);
+      });
+      var standard = d3.select('#standard').call(zoom);
+
       this.simulation.on('tick', function () {
         standard.selectAll('svg.node').transition().ease(function (v) {
           return d3.easeSinIn(v);
@@ -13518,6 +13519,8 @@ var StandardBSTGraph = function (_React$Component) {
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
+      var _this3 = this;
+
       if (this.props.root === null) return;
       var standard = d3.select('#standard');
 
@@ -13548,13 +13551,24 @@ var StandardBSTGraph = function (_React$Component) {
 
       var nodeG = node.enter().append('svg').attr('class', 'node').attr('width', '40').attr('height', '40');
 
-      nodeG.append('circle').attr('class', 'node').attr('stroke', 'white').attr('cx', '50%').attr('cy', '50%').attr('r', 20);
+      nodeG.append('circle').attr('cx', '50%').attr('cy', '50%').attr('r', 19);
 
       nodeG.append('text').attr('class', 'node').attr('fill', 'white').attr('x', '50%').attr('y', '50%').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle').text(function (d) {
         return d.value;
       });
 
+      nodeG.append('circle').attr('class', 'node').attr('stroke', 'green').attr('cx', '50%').attr('cy', '50%').attr('fill', 'transparent').attr('r', 19).on('click', function (d1) {
+        d3.selectAll('circle.node').attr('stroke', function (d2) {
+          return d1.key == d2.key ? 'green' : null;
+        });
+        _main.store.dispatch({ type: _constants.ADD_POINT, newElement: d1.key });
+      });
+
       node.exit().remove();
+      d3.selectAll('circle.node').attr('stroke', function (d) {
+        return _this3.props.root.lastTouched.key == d.key ? 'green' : null;
+      });
+
       this.simulation.nodes(nodes).alpha(1).restart();
     }
   }]);
@@ -13647,6 +13661,7 @@ var GemetricBST = function () {
     this.maxSatisfiedTime = 1;
     //for display purposes need to track how many points created each iteration of greedy algorithm
     this.numIterationSatisfiers = 0;
+    this.lastTouched = null; //needed for d3 to hightlight the most recent point
   }
 
   _createClass(GemetricBST, [{
@@ -13655,11 +13670,13 @@ var GemetricBST = function () {
       if (key instanceof Point) {
         this.points.push(key);
         this.maxTime = Math.max(this.maxTime, key.time);
+        this.lastTouched = key;
       } else {
         key = String(key);
         var newElement = new Point(key, value, this.maxTime + 1);
         this.points.push(newElement);
         this.maxTime++;
+        this.lastTouched = newElement;
       }
     }
     //takes an optional parameter for what subset of times (0 - maxTime) to look at
@@ -13839,6 +13856,7 @@ var Node = function () {
     this.id = '' + Math.random(); //used to uniquely identify nodes when displaying with d3
     this.x = 0; //used by d3 to represent the x position of the element
     this.y = 0; //used by d3 to represent the y position of the element
+    this.lastTouched = this; //used by d3 to select the last touched node
   }
 
   //inserts a key and rebalances
@@ -13852,7 +13870,10 @@ var Node = function () {
 
       key = String(key);
       value = value || key;
-      if (key == this.key) return 0;
+      if (key == this.key) {
+        this.lastTouched = this;
+        return 0;
+      }
 
       console.log(key);
       if (key.localeCompare(this.key) == -1) {
@@ -13863,6 +13884,7 @@ var Node = function () {
           this.numLeftChildren += this.left.insert(key, value, rebalance);
         }
         this.height = Math.max(this.height, 1 + this.left.height);
+        this.lastTouched = this.left.lastTouched;
       }
       if (key.localeCompare(this.key) >= 0) {
         if (this.right === null) {
@@ -13872,6 +13894,7 @@ var Node = function () {
           this.numRightChildren += this.right.insert(key, value, rebalance);
         }
         this.height = Math.max(this.height, 1 + this.right.height);
+        this.lastTouched = this.right.lastTouched;
       }
 
       if (rebalance) {
@@ -23495,7 +23518,260 @@ module.exports = g;
 
 
 /***/ }),
-/* 294 */,
+/* 294 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = __webpack_require__(7);
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactRedux = __webpack_require__(63);
+
+var _StandardBSTGraph = __webpack_require__(160);
+
+var _StandardBSTGraph2 = _interopRequireDefault(_StandardBSTGraph);
+
+var _GeometricBSTGraph = __webpack_require__(159);
+
+var _GeometricBSTGraph2 = _interopRequireDefault(_GeometricBSTGraph);
+
+var _main = __webpack_require__(64);
+
+var _constants = __webpack_require__(90);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+__webpack_require__(594);
+
+
+function sleep(ms) {
+  return new Promise(function (resolve) {
+    return setTimeout(resolve, ms);
+  });
+}
+
+var BST = function (_React$Component) {
+  _inherits(BST, _React$Component);
+
+  function BST() {
+    _classCallCheck(this, BST);
+
+    var _this = _possibleConstructorReturn(this, (BST.__proto__ || Object.getPrototypeOf(BST)).call(this));
+
+    _this.state = {
+      newElement: '',
+      standard: true,
+      geometric: true
+    };
+    _this.insertElement = _this.insertElement.bind(_this);
+    _this.changeElement = _this.changeElement.bind(_this);
+    _this.selectView = _this.selectView.bind(_this);
+    _this.insertSequence1 = _this.insertSequence1.bind(_this);
+    _this.insertSequence2 = _this.insertSequence2.bind(_this);
+    return _this;
+  }
+
+  _createClass(BST, [{
+    key: 'handleInsert',
+    value: function handleInsert(newElement) {
+      if (newElement === '') return;
+      if (this.state.standard) {
+        _main.store.dispatch({ type: _constants.INSERT_NODE, newElement: newElement });
+      }
+      if (this.state.geometric) {
+        _main.store.dispatch({ type: _constants.ADD_POINT, newElement: newElement });
+      }
+    }
+  }, {
+    key: 'insertElement',
+    value: function insertElement(event) {
+      event.preventDefault();
+      var newElement = this.state.newElement;
+      this.handleInsert(newElement);
+      this.setState({ newElement: '' });
+    }
+  }, {
+    key: 'changeElement',
+    value: function changeElement(event) {
+      this.setState({ newElement: event.target.value });
+    }
+  }, {
+    key: 'selectView',
+    value: function selectView(event) {
+      var state = this.state;
+      state[event.target.value] = event.target.checked;
+      this.setState(state);
+    }
+  }, {
+    key: 'insertSequence1',
+    value: function insertSequence1() {
+      var _this2 = this;
+
+      (async function () {
+        _this2.handleInsert(1);
+        await sleep(1500);
+        _this2.handleInsert(2);
+        await sleep(1500);
+        _this2.handleInsert(3);
+        await sleep(1500);
+        _this2.handleInsert(4);
+        await sleep(1500);
+        _this2.handleInsert(5);
+      })();
+    }
+  }, {
+    key: 'insertSequence2',
+    value: function insertSequence2() {
+      var _this3 = this;
+
+      (async function () {
+        _this3.handleInsert(0);
+        await sleep(1000);
+        _this3.handleInsert(8);
+        await sleep(1000);
+        _this3.handleInsert(4);
+        await sleep(1000);
+        _this3.handleInsert(12);
+        await sleep(1000);
+        _this3.handleInsert(2);
+        await sleep(1000);
+        _this3.handleInsert(10);
+        await sleep(1000);
+        _this3.handleInsert(6);
+        await sleep(1000);
+        _this3.handleInsert(14);
+        await sleep(1000);
+        _this3.handleInsert(1);
+        await sleep(1000);
+        _this3.handleInsert(9);
+        await sleep(1000);
+        _this3.handleInsert(5);
+        await sleep(1000);
+        _this3.handleInsert(13);
+        await sleep(1000);
+        _this3.handleInsert(3);
+        await sleep(1000);
+        _this3.handleInsert(11);
+        await sleep(1000);
+        _this3.handleInsert(7);
+        await sleep(1000);
+        _this3.handleInsert(15);
+      })();
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      return _react2.default.createElement(
+        'main',
+        { id: 'bst' },
+        _react2.default.createElement(
+          'h1',
+          { id: 'title' },
+          'BST Visualizer'
+        ),
+        _react2.default.createElement(
+          'div',
+          { id: 'graphTitles' },
+          _react2.default.createElement(
+            'div',
+            null,
+            _react2.default.createElement(
+              'h2',
+              null,
+              'Standard View'
+            ),
+            _react2.default.createElement(
+              'h2',
+              null,
+              'Geometric View'
+            )
+          )
+        ),
+        _react2.default.createElement(
+          'form',
+          { id: 'insertElement', onSubmit: this.insertElement },
+          'Insert an element',
+          _react2.default.createElement('input', { value: this.state.newElement, onChange: this.changeElement }),
+          _react2.default.createElement(
+            'button',
+            { id: 'insert', type: 'submit' },
+            'Insert'
+          ),
+          _react2.default.createElement(
+            'button',
+            { id: 'sequence1', onClick: this.insertSequence1 },
+            'Sequence 1'
+          ),
+          _react2.default.createElement(
+            'button',
+            { id: 'sequence2', onClick: this.insertSequence2 },
+            'Sequence 2'
+          )
+        ),
+        _react2.default.createElement(
+          'div',
+          { id: 'inserts' },
+          _react2.default.createElement(
+            'h4',
+            null,
+            'Enable Inserts:'
+          ),
+          _react2.default.createElement(
+            'div',
+            null,
+            'Standard View'
+          ),
+          _react2.default.createElement(
+            'label',
+            { htmlFor: 'standardInsert', className: 'toggle' },
+            _react2.default.createElement('input', { type: 'checkbox', value: 'standard', id: 'standardInsert',
+              onChange: this.selectView, checked: this.state.standard }),
+            _react2.default.createElement('span', null)
+          ),
+          _react2.default.createElement(
+            'div',
+            null,
+            'Geometric View'
+          ),
+          _react2.default.createElement(
+            'label',
+            { htmlFor: 'geometricInsert', className: 'toggle' },
+            _react2.default.createElement('input', { type: 'checkbox', value: 'geometric', id: 'geometricInsert',
+              onChange: this.selectView, checked: this.state.geometric }),
+            _react2.default.createElement('span', null)
+          )
+        ),
+        _react2.default.createElement(
+          'div',
+          { id: 'graphs' },
+          _react2.default.createElement(_StandardBSTGraph2.default, null),
+          _react2.default.createElement(_GeometricBSTGraph2.default, null)
+        )
+      );
+    }
+  }]);
+
+  return BST;
+}(_react2.default.Component);
+
+exports.default = BST;
+
+/***/ }),
 /* 295 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -38240,7 +38516,12 @@ var dependencies = {"d3-array":"1.2.1","d3-axis":"1.0.8","d3-brush":"1.0.4","d3-
 
 
 /***/ }),
-/* 594 */,
+/* 594 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
 /* 595 */
 /***/ (function(module, exports) {
 
@@ -53459,273 +53740,6 @@ module.exports = function(module) {
 	return module;
 };
 
-
-/***/ }),
-/* 745 */,
-/* 746 */,
-/* 747 */,
-/* 748 */,
-/* 749 */,
-/* 750 */,
-/* 751 */,
-/* 752 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _react = __webpack_require__(7);
-
-var _react2 = _interopRequireDefault(_react);
-
-var _reactRedux = __webpack_require__(63);
-
-var _StandardBSTGraph = __webpack_require__(160);
-
-var _StandardBSTGraph2 = _interopRequireDefault(_StandardBSTGraph);
-
-var _GeometricBSTGraph = __webpack_require__(159);
-
-var _GeometricBSTGraph2 = _interopRequireDefault(_GeometricBSTGraph);
-
-var _main = __webpack_require__(64);
-
-var _constants = __webpack_require__(90);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-__webpack_require__(753);
-
-
-function sleep(ms) {
-  return new Promise(function (resolve) {
-    return setTimeout(resolve, ms);
-  });
-}
-
-var BST = function (_React$Component) {
-  _inherits(BST, _React$Component);
-
-  function BST() {
-    _classCallCheck(this, BST);
-
-    var _this = _possibleConstructorReturn(this, (BST.__proto__ || Object.getPrototypeOf(BST)).call(this));
-
-    _this.state = {
-      newElement: '',
-      standard: true,
-      geometric: true
-    };
-    _this.insertElement = _this.insertElement.bind(_this);
-    _this.changeElement = _this.changeElement.bind(_this);
-    _this.selectView = _this.selectView.bind(_this);
-    _this.insertSequence1 = _this.insertSequence1.bind(_this);
-    _this.insertSequence2 = _this.insertSequence2.bind(_this);
-    return _this;
-  }
-
-  _createClass(BST, [{
-    key: 'handleInsert',
-    value: function handleInsert(newElement) {
-      if (newElement === '') return;
-      if (this.state.standard) {
-        _main.store.dispatch({ type: _constants.INSERT_NODE, newElement: newElement });
-      }
-      if (this.state.geometric) {
-        _main.store.dispatch({ type: _constants.ADD_POINT, newElement: newElement });
-      }
-    }
-  }, {
-    key: 'insertElement',
-    value: function insertElement(event) {
-      event.preventDefault();
-      var newElement = this.state.newElement;
-      this.handleInsert(newElement);
-      this.setState({ newElement: '' });
-    }
-  }, {
-    key: 'changeElement',
-    value: function changeElement(event) {
-      this.setState({ newElement: event.target.value });
-    }
-  }, {
-    key: 'selectView',
-    value: function selectView(event) {
-      var state = this.state;
-      state[event.target.value] = event.target.checked;
-      this.setState(state);
-    }
-  }, {
-    key: 'insertSequence1',
-    value: function insertSequence1() {
-      var _this2 = this;
-
-      (async function () {
-        _this2.handleInsert(1);
-        await sleep(1500);
-        _this2.handleInsert(2);
-        await sleep(1500);
-        _this2.handleInsert(3);
-        await sleep(1500);
-        _this2.handleInsert(4);
-        await sleep(1500);
-        _this2.handleInsert(5);
-      })();
-    }
-  }, {
-    key: 'insertSequence2',
-    value: function insertSequence2() {
-      var _this3 = this;
-
-      (async function () {
-        _this3.handleInsert(0);
-        await sleep(1000);
-        _this3.handleInsert(8);
-        await sleep(1000);
-        _this3.handleInsert(4);
-        await sleep(1000);
-        _this3.handleInsert(12);
-        await sleep(1000);
-        _this3.handleInsert(2);
-        await sleep(1000);
-        _this3.handleInsert(10);
-        await sleep(1000);
-        _this3.handleInsert(6);
-        await sleep(1000);
-        _this3.handleInsert(14);
-        await sleep(1000);
-        _this3.handleInsert(1);
-        await sleep(1000);
-        _this3.handleInsert(9);
-        await sleep(1000);
-        _this3.handleInsert(5);
-        await sleep(1000);
-        _this3.handleInsert(13);
-        await sleep(1000);
-        _this3.handleInsert(3);
-        await sleep(1000);
-        _this3.handleInsert(11);
-        await sleep(1000);
-        _this3.handleInsert(7);
-        await sleep(1000);
-        _this3.handleInsert(15);
-      })();
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      return _react2.default.createElement(
-        'main',
-        { id: 'bst' },
-        _react2.default.createElement(
-          'h1',
-          { id: 'title' },
-          'BST Visualizer'
-        ),
-        _react2.default.createElement(
-          'div',
-          { id: 'graphTitles' },
-          _react2.default.createElement(
-            'div',
-            null,
-            _react2.default.createElement(
-              'h2',
-              null,
-              'Standard View'
-            ),
-            _react2.default.createElement(
-              'h2',
-              null,
-              'Geometric View'
-            )
-          )
-        ),
-        _react2.default.createElement(
-          'form',
-          { id: 'insertElement', onSubmit: this.insertElement },
-          'Insert an element',
-          _react2.default.createElement('input', { value: this.state.newElement, onChange: this.changeElement }),
-          _react2.default.createElement(
-            'button',
-            { id: 'insert', type: 'submit' },
-            'Insert'
-          ),
-          _react2.default.createElement(
-            'button',
-            { id: 'sequence1', onClick: this.insertSequence1 },
-            'Sequence 1'
-          ),
-          _react2.default.createElement(
-            'button',
-            { id: 'sequence2', onClick: this.insertSequence2 },
-            'Sequence 2'
-          )
-        ),
-        _react2.default.createElement(
-          'div',
-          { id: 'inserts' },
-          _react2.default.createElement(
-            'h4',
-            null,
-            'Enable Inserts:'
-          ),
-          _react2.default.createElement(
-            'div',
-            null,
-            'Standard View'
-          ),
-          _react2.default.createElement(
-            'label',
-            { htmlFor: 'standardInsert', className: 'toggle' },
-            _react2.default.createElement('input', { type: 'checkbox', value: 'standard', id: 'standardInsert',
-              onChange: this.selectView, checked: this.state.standard }),
-            _react2.default.createElement('span', null)
-          ),
-          _react2.default.createElement(
-            'div',
-            null,
-            'Geometric View'
-          ),
-          _react2.default.createElement(
-            'label',
-            { htmlFor: 'geometricInsert', className: 'toggle' },
-            _react2.default.createElement('input', { type: 'checkbox', value: 'geometric', id: 'geometricInsert',
-              onChange: this.selectView, checked: this.state.geometric }),
-            _react2.default.createElement('span', null)
-          )
-        ),
-        _react2.default.createElement(
-          'div',
-          { id: 'graphs' },
-          _react2.default.createElement(_StandardBSTGraph2.default, null),
-          _react2.default.createElement(_GeometricBSTGraph2.default, null)
-        )
-      );
-    }
-  }]);
-
-  return BST;
-}(_react2.default.Component);
-
-exports.default = BST;
-
-/***/ }),
-/* 753 */
-/***/ (function(module, exports) {
-
-// removed by extract-text-webpack-plugin
 
 /***/ })
 /******/ ]);

@@ -79,14 +79,20 @@ class StandardBSTGraph extends React.Component {
         <svg id="standard" className="graph">
           <g id="links"></g>
           <g id="nodes"></g>
-          <g id="values"></g>
         </svg>
       </div>
     );
   }
 
   componentDidMount () {
-    let standard = d3.select('#standard');
+    var zoom = d3.zoom()
+      .on('zoom', () => {
+        d3.select('#nodes').attr('transform', d3.event.transform);
+        d3.select('#links').attr('transform', d3.event.transform);
+      });
+    let standard = d3.select('#standard')
+      .call(zoom);
+
     this.simulation
       .on('tick', () => {
         standard.selectAll('svg.node').transition()
@@ -166,11 +172,9 @@ class StandardBSTGraph extends React.Component {
 
     nodeG
       .append('circle')
-      .attr('class', 'node')
-      .attr('stroke', 'white')
       .attr('cx', '50%')
       .attr('cy', '50%')
-      .attr('r', 20);
+      .attr('r', 19);
 
     nodeG
       .append('text')
@@ -182,7 +186,24 @@ class StandardBSTGraph extends React.Component {
       .attr('alignment-baseline', 'middle')
       .text((d) => d.value);
 
+    nodeG
+      .append('circle')
+      .attr('class', 'node')
+      .attr('stroke', 'green')
+      .attr('cx', '50%')
+      .attr('cy', '50%')
+      .attr('fill', 'transparent')
+      .attr('r', 19)
+      .on('click', (d1) => {
+        d3.selectAll('circle.node')
+          .attr('stroke', d2 => d1.key == d2.key ? 'green' : null);
+        store.dispatch({ type: ADD_POINT, newElement: d1.key });
+      });
+
     node.exit().remove();
+    d3.selectAll('circle.node')
+      .attr('stroke', d => this.props.root.lastTouched.key == d.key ? 'green' : null);
+
     this.simulation.nodes(nodes)
       .alpha(1)
       .restart();
