@@ -58,7 +58,6 @@ class vEBGraph extends React.Component {
           Insert an element
           <input value={this.state.newElement} onChange={this.changeElement}></input>
           <button type="submit">Insert</button>
-          Hello, World!
         </form>
         <svg id="veb" className="graph">
           <g id="links"/>
