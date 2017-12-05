@@ -23838,7 +23838,7 @@ var Navbar = function (_React$Component) {
             _react2.default.createElement(
               "a",
               { href: "https://github.com/Firescar96/geometric-bst-visualizer" },
-              _react2.default.createElement("img", { src: "..//images/GitHub-Mark-Light-32px.png" }),
+              _react2.default.createElement("img", { src: "./public/images/GitHub-Mark-Light-32px.png" }),
               _react2.default.createElement(
                 "span",
                 null,

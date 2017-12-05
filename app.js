@@ -11,7 +11,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 */
 app.set('port', process.env.PORT || '3000');
 
-require('./server/routes')(app);
+app.use(function (req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
+
+app.get('*/public/*', function (req, res, next) {
+  res.sendFile(path.join(__dirname + req.path));
+});
+
+app.get('/*', function (req, res, next) {
+  res.sendFile(path.join(__dirname + '/index.html'));
+});
 
 var server = http.createServer(app);
 
@@ -21,5 +33,3 @@ var server = http.createServer(app);
 server.listen(app.get('port'), function () {
   console.log('Express server listening on port ' + app.get('port'));
 });
-
-require('./server/main.js')(server);
