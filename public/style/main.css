@@ -126,9 +126,20 @@ nav {
   nav ul {
     display: inline-block;
     list-style: none;
-    padding: 0; }
+    padding: 0;
+    width: 100%; }
     nav ul li {
       float: left; }
+      nav ul li#github {
+        float: right; }
+        nav ul li#github img {
+          width: 16px;
+          height: 16px;
+          padding-right: 5px; }
+        nav ul li#github a {
+          color: red;
+          margin: auto;
+          padding: 0; }
       nav ul li a {
         color: #55beff;
         padding: 15px;

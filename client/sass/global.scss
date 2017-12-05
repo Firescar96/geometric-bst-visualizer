@@ -27,9 +27,26 @@ nav {
     display: inline-block;
     list-style: none;
     padding: 0;
+    width: 100%;
 
     li {
       float: left;
+
+      &#github {
+        float: right;
+
+        img {
+          width: 16px;
+          height: 16px;
+          padding-right: 5px;
+        }
+
+        a{
+          color: red;
+          margin: auto;
+          padding: 0;
+        }
+      }
 
       a {
         color: #55beff;
@@ -38,9 +55,6 @@ nav {
 
         &.active {
           border: solid 1px white;
-        }
-        &:hover {
-
         }
       }
     }

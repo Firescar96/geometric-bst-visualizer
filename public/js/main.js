@@ -23831,6 +23831,20 @@ var Navbar = function (_React$Component) {
               { href: "#/veb" },
               "van Emde Boas"
             )
+          ),
+          _react2.default.createElement(
+            "li",
+            { id: "github" },
+            _react2.default.createElement(
+              "a",
+              { href: "https://github.com/Firescar96/geometric-bst-visualizer" },
+              _react2.default.createElement("img", { src: "..//images/GitHub-Mark-Light-32px.png" }),
+              _react2.default.createElement(
+                "span",
+                null,
+                "Source"
+              )
+            )
           )
         )
       );
