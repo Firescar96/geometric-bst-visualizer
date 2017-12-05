@@ -24,7 +24,10 @@ class vEBGraph extends React.Component {
   }
 
   changeElement (event) {
-    this.setState({newElement: event.target.value});
+    let value = event.target.value;
+    if(parseInt(value) == NaN) return;
+    if(value > Math.pow(2, this.state.root.bits)) return
+    this.setState({newElement: value});
   }
 
   insertElement (event) {
@@ -58,6 +61,7 @@ class vEBGraph extends React.Component {
           Insert an element
           <input value={this.state.newElement} onChange={this.changeElement}></input>
           <button type="submit">Insert</button>
+          <span>{Number(this.state.newElement).toString(2)}</span>
         </form>
         <svg id="veb" className="graph">
           <g id="links"/>
@@ -151,7 +155,6 @@ class vEBGraph extends React.Component {
 
     let leafNodes = bitNodes.filter(d => d.left == null && d.right == null)
     let values = veb.select('#values').selectAll('svg.value').data(leafNodes)
-    console.log(leafNodes);
 
     let valuesG = values.enter()
       .append('svg')

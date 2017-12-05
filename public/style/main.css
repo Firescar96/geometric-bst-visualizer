@@ -100,6 +100,9 @@ main#veb {
   main#veb svg {
     width: 100%;
     height: 100%; }
+  main#veb form span {
+    margin-left: 15px;
+    font-size: 20px; }
 html, body, #root, #root > div {
   width: auto;
   height: 100%;
