@@ -23956,7 +23956,7 @@ var vEBGraph = function (_React$Component) {
         _react2.default.createElement(
           'h1',
           { id: 'title' },
-          'vEB Tree View'
+          'vEB Geometric Tree View'
         ),
         _react2.default.createElement(
           'form',

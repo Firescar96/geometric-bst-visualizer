@@ -56,7 +56,7 @@ class vEBGraph extends React.Component {
   render () {
     return (
       <main id="veb">
-        <h1 id="title">vEB Tree View</h1>
+        <h1 id="title">vEB Geometric Tree View</h1>
         <form onSubmit={this.insertElement}>
           Insert an element
           <input value={this.state.newElement} onChange={this.changeElement}></input>
