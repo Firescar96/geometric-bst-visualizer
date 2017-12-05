@@ -23915,7 +23915,10 @@ var vEBGraph = function (_React$Component) {
   _createClass(vEBGraph, [{
     key: 'changeElement',
     value: function changeElement(event) {
-      this.setState({ newElement: event.target.value });
+      var value = event.target.value;
+      if (parseInt(value) == NaN) return;
+      if (value > Math.pow(2, this.state.root.bits)) return;
+      this.setState({ newElement: value });
     }
   }, {
     key: 'insertElement',
@@ -23953,7 +23956,7 @@ var vEBGraph = function (_React$Component) {
         _react2.default.createElement(
           'h1',
           { id: 'title' },
-          'vEB Tree View'
+          'vEB Geometric Tree View'
         ),
         _react2.default.createElement(
           'form',
@@ -23964,6 +23967,11 @@ var vEBGraph = function (_React$Component) {
             'button',
             { type: 'submit' },
             'Insert'
+          ),
+          _react2.default.createElement(
+            'span',
+            null,
+            Number(this.state.newElement).toString(2)
           )
         ),
         _react2.default.createElement(
@@ -24050,7 +24058,6 @@ var vEBGraph = function (_React$Component) {
         return d.left == null && d.right == null;
       });
       var values = veb.select('#values').selectAll('svg.value').data(leafNodes);
-      console.log(leafNodes);
 
       var valuesG = values.enter().append('svg').attr('class', 'value').attr('x', function (d) {
         return d.x - 1;
