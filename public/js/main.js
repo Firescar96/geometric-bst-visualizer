@@ -13198,7 +13198,8 @@ var GeometricBSTGraph = function (_React$Component) {
       var _this2 = this;
 
       var points = this.props.root.points.sort(function (a, b) {
-        return a.key.localeCompare(b.key);
+        var lessThan = isNaN(a.key) && a.key.localeCompare(b.key) < 0 || !isNaN(a.key) && isNaN(b.key) || a.key < b.key;
+        return lessThan ? -1 : 1;
       });
       var geometric = d3.select('#geometric');
       var width = geometric.node().getBoundingClientRect().width;
@@ -13868,15 +13869,15 @@ var Node = function () {
     value: function insert(key, value) {
       var rebalance = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
-      key = String(key);
+
+      key = isNaN(key) ? key : parseFloat(key);
       value = value || key;
       if (key == this.key) {
         this.lastTouched = this;
         return 0;
       }
 
-      console.log(key);
-      if (key.localeCompare(this.key) == -1) {
+      if (isNaN(key) && key.localeCompare(this.key) < 0 || !isNaN(key) && isNaN(this.key) || key < this.key) {
         if (this.left === null) {
           this.numLeftChildren++;
           this.left = new Node(key, value, this);
@@ -13885,8 +13886,7 @@ var Node = function () {
         }
         this.height = Math.max(this.height, 1 + this.left.height);
         this.lastTouched = this.left.lastTouched;
-      }
-      if (key.localeCompare(this.key) >= 0) {
+      } else {
         if (this.right === null) {
           this.numRightChildren++;
           this.right = new Node(key, value, this);
@@ -14053,7 +14053,7 @@ var Node = function () {
     value: function find(key) {
       if (key == this.key) {
         return this;
-      } else if (key.localeCompare(this.key) == -1) {
+      } else if (isNaN(key) && key.localeCompare(this.key) < 0 || !isNaN(key) && isNaN(this.key) || key < this.key) {
         return this.numLeftChildren > 0 ? this.left.find(key) : null;
       }
 
@@ -23918,11 +23918,13 @@ var vEBGraph = function (_React$Component) {
     _this.state = {
       simulation: d3.forceSimulation(),
       newElement: '',
-      root: new _VEBNode2.default(4)
+      root: new _VEBNode2.default(2)
     };
     window.tree = _this.state.root;
     _this.insertElement = _this.insertElement.bind(_this);
     _this.changeElement = _this.changeElement.bind(_this);
+    _this.doubleBits = _this.doubleBits.bind(_this);
+    _this.halveBits = _this.halveBits.bind(_this);
     return _this;
   }
 
@@ -23931,7 +23933,8 @@ var vEBGraph = function (_React$Component) {
     value: function changeElement(event) {
       var value = event.target.value;
       if (parseInt(value) == NaN) return;
-      if (value > Math.pow(2, this.state.root.bits)) return;
+      if (value >= Math.pow(2, this.state.root.bits)) return;
+      if (value < 0) return;
       this.setState({ newElement: value });
     }
   }, {
@@ -23951,8 +23954,10 @@ var vEBGraph = function (_React$Component) {
 
       (async function () {
         var links = veb.select('#links').selectAll('line');
-        for (var i = 0; i < linkList.length; i++) {
-          links.data([linkList[i]], function (d) {
+        var n = _this2.state.root.bits;
+        while (linkList.length > 0) {
+          var curLinks = linkList.splice(0, Math.max(linkList.length / 2, 1));
+          links.data(curLinks, function (d) {
             return d.target.id;
           }).attr('stroke', 'green');
           await sleep(500);
@@ -23960,6 +23965,18 @@ var vEBGraph = function (_React$Component) {
 
         _this2.setState({ newElement: '' });
       })();
+    }
+  }, {
+    key: 'doubleBits',
+    value: function doubleBits() {
+      if (this.state.root.bits == 8) return;
+      this.setState({ root: new _VEBNode2.default(this.state.root.bits * 2) }, this.initializeD3Graph);
+    }
+  }, {
+    key: 'halveBits',
+    value: function halveBits() {
+      if (this.state.root.bits == 2) return;
+      this.setState({ root: new _VEBNode2.default(this.state.root.bits / 2) }, this.initializeD3Graph);
     }
   }, {
     key: 'render',
@@ -23989,6 +24006,20 @@ var vEBGraph = function (_React$Component) {
           )
         ),
         _react2.default.createElement(
+          'div',
+          null,
+          _react2.default.createElement(
+            'button',
+            { onClick: this.doubleBits },
+            'Double bits'
+          ),
+          _react2.default.createElement(
+            'button',
+            { onClick: this.halveBits },
+            'Halve bits'
+          )
+        ),
+        _react2.default.createElement(
           'svg',
           { id: 'veb', className: 'graph' },
           _react2.default.createElement('g', { id: 'links' }),
@@ -24000,7 +24031,41 @@ var vEBGraph = function (_React$Component) {
   }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
+      var zoom = d3.zoom().on('zoom', function () {
+        d3.select('#nodes').attr('transform', d3.event.transform);
+        d3.select('#links').attr('transform', d3.event.transform);
+        d3.select('#values').attr('transform', d3.event.transform);
+      });
+      var veb = d3.select('svg#veb').call(zoom);
+      this.initializeD3Graph();
+    }
+  }, {
+    key: 'componentDidUpdate',
+    value: function componentDidUpdate() {
       var veb = d3.select('svg#veb');
+      //console.log(this.state.root);
+      var bitvector = this.state.root.bitvector();
+      var treeView = new _TreeView2.default(bitvector);
+      var bitNodes = treeView.traversal();
+      veb.selectAll('text.node').data(bitNodes).text(function (d) {
+        return d.value;
+      });
+
+      veb.selectAll('line').attr('stroke', '#ddd');
+
+      var leafNodes = bitNodes.filter(function (d) {
+        return d.left == null && d.right == null;
+      });
+      veb.selectAll('text.value').data(leafNodes).text(function (d, i) {
+        return d.value ? i : null;
+      });
+    }
+  }, {
+    key: 'initializeD3Graph',
+    value: function initializeD3Graph() {
+      window.d3 = d3;
+      var veb = d3.select('svg#veb');
+
       var height = veb.node().getBoundingClientRect().height;
       var heightMargin = height / 5;
       var width = veb.node().getBoundingClientRect().width;
@@ -24023,8 +24088,8 @@ var vEBGraph = function (_React$Component) {
         node.y = node.parent.y + ELEMENT_HEIGHT * 3;
       });
 
+      veb.selectAll('svg.node').remove();
       var nodes = veb.select('#nodes').selectAll('svg.node').data(bitNodes);
-
       var nodeG = nodes.enter().append('svg').attr('class', 'node').attr('x', function (d) {
         return d.x - 1;
       }).attr('y', function (d) {
@@ -24037,7 +24102,7 @@ var vEBGraph = function (_React$Component) {
         return d.value;
       });
 
-      nodeG.exit().remove();
+      nodes.exit().remove();
 
       function linkChildren(parent) {
         var linkList = [];
@@ -24053,7 +24118,8 @@ var vEBGraph = function (_React$Component) {
       }
 
       var linkList = linkChildren(treeView);
-      var links = veb.select('#links').selectAll('line').data(linkList, function (d) {
+      veb.selectAll('line.link').remove();
+      var links = veb.select('#links').selectAll('line.link').data(linkList, function (d) {
         return d.target.id;
       });
 
@@ -24071,6 +24137,7 @@ var vEBGraph = function (_React$Component) {
       var leafNodes = bitNodes.filter(function (d) {
         return d.left == null && d.right == null;
       });
+      veb.selectAll('svg.value').remove();
       var values = veb.select('#values').selectAll('svg.value').data(leafNodes);
 
       var valuesG = values.enter().append('svg').attr('class', 'value').attr('x', function (d) {
@@ -24083,28 +24150,7 @@ var vEBGraph = function (_React$Component) {
 
       valuesG.append('text').attr('class', 'value').attr('fill', 'white').attr('x', '50%').attr('y', '60%').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle');
 
-      valuesG.exit().remove();
-    }
-  }, {
-    key: 'componentDidUpdate',
-    value: function componentDidUpdate() {
-      var veb = d3.select('svg#veb');
-      //console.log(this.state.root);
-      var bitvector = this.state.root.bitvector();
-      var treeView = new _TreeView2.default(bitvector);
-      var bitNodes = treeView.traversal();
-      veb.selectAll('text.node').data(bitNodes).text(function (d) {
-        return d.value;
-      });
-
-      veb.selectAll('line').attr('stroke', '#ddd');
-
-      var leafNodes = bitNodes.filter(function (d) {
-        return d.left == null && d.right == null;
-      });
-      veb.selectAll('text.value').data(leafNodes).text(function (d, i) {
-        return d.value ? i : null;
-      });
+      values.exit().remove();
     }
   }]);
 

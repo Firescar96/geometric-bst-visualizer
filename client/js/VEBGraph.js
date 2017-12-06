@@ -16,17 +16,20 @@ class vEBGraph extends React.Component {
     this.state = {
       simulation: d3.forceSimulation(),
       newElement: '',
-      root: new VEBNode(4),
+      root: new VEBNode(2),
     };
     window.tree = this.state.root;
     this.insertElement = this.insertElement.bind(this);
     this.changeElement = this.changeElement.bind(this);
+    this.doubleBits = this.doubleBits.bind(this);
+    this.halveBits = this.halveBits.bind(this);
   }
 
   changeElement (event) {
     let value = event.target.value;
     if(parseInt(value) == NaN) return;
-    if(value > Math.pow(2, this.state.root.bits)) return
+    if(value >= Math.pow(2, this.state.root.bits)) return;
+    if(value < 0) return;
     this.setState({newElement: value});
   }
 
@@ -43,14 +46,28 @@ class vEBGraph extends React.Component {
 
     (async () => {
       let links = veb.select('#links').selectAll('line');
-      for(var i =0; i < linkList.length; i++) {
-        links.data([linkList[i]], d => d.target.id)
+      let n = this.state.root.bits;
+      while(linkList.length > 0) {
+        let curLinks = linkList.splice(0, Math.max(linkList.length/2, 1))
+        links.data(curLinks, d => d.target.id)
          .attr('stroke', 'green')
         await sleep(500);
       }
 
       this.setState({newElement: ''});
     })()
+  }
+
+  doubleBits () {
+    if(this.state.root.bits == 8) return;
+    this.setState({root: new VEBNode(this.state.root.bits*2)},
+      this.initializeD3Graph)
+  }
+
+  halveBits () {
+    if(this.state.root.bits == 2) return;
+    this.setState({root: new VEBNode(this.state.root.bits/2)},
+      this.initializeD3Graph)
   }
 
   render () {
@@ -63,6 +80,10 @@ class vEBGraph extends React.Component {
           <button type="submit">Insert</button>
           <span>{Number(this.state.newElement).toString(2)}</span>
         </form>
+        <div>
+          <button onClick={this.doubleBits}>Double bits</button>
+          <button onClick={this.halveBits}>Halve bits</button>
+        </div>
         <svg id="veb" className="graph">
           <g id="links"/>
           <g id="nodes"/>
@@ -73,7 +94,38 @@ class vEBGraph extends React.Component {
   }
 
   componentDidMount () {
+    var zoom = d3.zoom()
+      .on('zoom', () => {
+        d3.select('#nodes').attr('transform', d3.event.transform);
+        d3.select('#links').attr('transform', d3.event.transform);
+        d3.select('#values').attr('transform', d3.event.transform);
+      });
+    let veb = d3.select('svg#veb')
+      .call(zoom);
+    this.initializeD3Graph();
+  }
+
+  componentDidUpdate () {
     let veb = d3.select('svg#veb');
+    //console.log(this.state.root);
+    let bitvector = this.state.root.bitvector();
+    let treeView = new TreeView(bitvector);
+    let bitNodes = treeView.traversal();
+    veb.selectAll('text.node').data(bitNodes)
+      .text((d) => d.value);
+
+    veb.selectAll('line')
+      .attr('stroke', '#ddd')
+
+    let leafNodes = bitNodes.filter(d => d.left == null && d.right == null)
+    veb.selectAll('text.value').data(leafNodes)
+      .text((d, i) => d.value ? i : null);
+  }
+
+  initializeD3Graph () {
+    window.d3 = d3;
+    let veb = d3.select('svg#veb');
+
     let height = veb.node().getBoundingClientRect().height;
     let heightMargin = height / 5;
     let width = veb.node().getBoundingClientRect().width;
@@ -96,8 +148,9 @@ class vEBGraph extends React.Component {
       node.y = node.parent.y + ELEMENT_HEIGHT * 3;
     });
 
-    let nodes = veb.select('#nodes').selectAll('svg.node').data(bitNodes);
-
+    veb.selectAll('svg.node').remove();
+    let nodes = veb.select('#nodes').selectAll('svg.node')
+      .data(bitNodes)
     let nodeG = nodes.enter()
       .append('svg')
       .attr('class', 'node')
@@ -124,7 +177,7 @@ class vEBGraph extends React.Component {
       .attr('alignment-baseline', 'middle')
       .text((d) => d.value);
 
-    nodeG.exit().remove();
+    nodes.exit().remove();
 
     function linkChildren (parent) {
       let linkList = [];
@@ -140,7 +193,8 @@ class vEBGraph extends React.Component {
     }
 
     let linkList = linkChildren(treeView);
-    let links = veb.select('#links').selectAll('line').data(linkList, d => d.target.id);
+    veb.selectAll('line.link').remove();
+    let links = veb.select('#links').selectAll('line.link').data(linkList, d => d.target.id);
 
     links
       .enter().append('line')
@@ -154,6 +208,7 @@ class vEBGraph extends React.Component {
     links.exit().remove();
 
     let leafNodes = bitNodes.filter(d => d.left == null && d.right == null)
+    veb.selectAll('svg.value').remove()
     let values = veb.select('#values').selectAll('svg.value').data(leafNodes)
 
     let valuesG = values.enter()
@@ -181,24 +236,7 @@ class vEBGraph extends React.Component {
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
 
-    valuesG.exit().remove();
-  }
-
-  componentDidUpdate () {
-    let veb = d3.select('svg#veb');
-    //console.log(this.state.root);
-    let bitvector = this.state.root.bitvector();
-    let treeView = new TreeView(bitvector);
-    let bitNodes = treeView.traversal();
-    veb.selectAll('text.node').data(bitNodes)
-      .text((d) => d.value);
-
-    veb.selectAll('line')
-      .attr('stroke', '#ddd')
-
-    let leafNodes = bitNodes.filter(d => d.left == null && d.right == null)
-    veb.selectAll('text.value').data(leafNodes)
-      .text((d, i) => d.value ? i : null);
+    values.exit().remove();
   }
 }
 

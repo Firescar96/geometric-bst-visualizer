@@ -154,7 +154,8 @@ class GeometricBSTGraph extends React.Component {
   }
   componentDidUpdate () {
     let points = this.props.root.points.sort((a, b) => {
-      return a.key.localeCompare(b.key);
+      let lessThan = (isNaN(a.key) && a.key.localeCompare(b.key) < 0 ) || (!isNaN(a.key) && isNaN(b.key)) || a.key < b.key;
+      return lessThan ? -1 : 1;
     });
     let geometric = d3.select('#geometric');
     let width = geometric.node().getBoundingClientRect().width;
