@@ -23,6 +23,7 @@ class BST extends React.Component {
     this.selectView = this.selectView.bind(this);
     this.insertSequence1 = this.insertSequence1.bind(this);
     this.insertSequence2 = this.insertSequence2.bind(this);
+    this.runningSequence = false;
   }
   handleInsert (newElement) {
     if(newElement === '')return;
@@ -48,6 +49,8 @@ class BST extends React.Component {
     this.setState(state);
   }
   insertSequence1 () {
+    if(this.runningSequence) return;
+    this.runningSequence = true;
     (async () => {
     this.handleInsert(1);
     await sleep(1500)
@@ -58,9 +61,12 @@ class BST extends React.Component {
     this.handleInsert(4);
     await sleep(1500)
     this.handleInsert(5);
+    this.runningSequence = false;
   })()
   }
   insertSequence2 () {
+    if(this.runningSequence) return;
+    this.runningSequence = true;
     (async () => {
     this.handleInsert(0);
     await sleep(1000)
@@ -93,6 +99,7 @@ class BST extends React.Component {
     this.handleInsert(7);
     await sleep(1000)
     this.handleInsert(15);
+    this.runningSequence = false;
   })()
   }
   render () {

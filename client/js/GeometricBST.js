@@ -71,7 +71,6 @@ class GemetricBST {
       }
     }
     maxSubset = Object.keys(maxSubset).map(x => maxSubset[x]).filter(x => x.time < time);
-    console.log('maxSubset', maxSubset);
     //for the given time get the touched points that need satisfaction and satisfy them
     let agenda = subset.filter(x => x.time == time);
     let levelValues = agenda.map(x => x.key);
@@ -102,7 +101,6 @@ class GemetricBST {
         isTopSatisfied = levelValues.filter(x => x <= rangeMax && x > rangeMin).length > 0;
       }
       if(isTopSatisfied)return;
-      console.log('not getting here', unsatisfiedPoint);
 
       let satisfier = new Point(unsatisfiedPoint.key, unsatisfiedPoint.key, levelPoint.time, true);
       satisfier.delay = this.numIterationSatisfiers;
@@ -134,7 +132,7 @@ class GemetricBST {
           maxmin = unsatPoint;
         }
       }
-      console.log('still unsat', maxmin);
+
       satisfy(minmax, levelPoint);
       satisfy(maxmin, levelPoint);
     }
