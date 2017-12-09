@@ -13472,10 +13472,24 @@ var StandardBSTGraph = function (_React$Component) {
           _react2.default.createElement('span', null)
         ),
         _react2.default.createElement(
-          'svg',
-          { id: 'standard', className: 'graph' },
-          _react2.default.createElement('g', { id: 'links' }),
-          _react2.default.createElement('g', { id: 'nodes' })
+          'div',
+          { className: 'svgContainer' },
+          _react2.default.createElement(
+            'div',
+            { id: 'standardTooltip', className: 'tooltip' },
+            '?',
+            _react2.default.createElement(
+              'span',
+              { className: 'tooltiptext' },
+              'after inserting elements: click and drag to pan use the scroll wheel to zoom'
+            )
+          ),
+          _react2.default.createElement(
+            'svg',
+            { id: 'standard', className: 'graph' },
+            _react2.default.createElement('g', { id: 'links' }),
+            _react2.default.createElement('g', { id: 'nodes' })
+          )
         )
       );
     }

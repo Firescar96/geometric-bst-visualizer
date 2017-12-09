@@ -76,10 +76,16 @@ class StandardBSTGraph extends React.Component {
             onChange={this.selectRebalance}  checked={this.props.rebalance}/>
           <span></span>
         </label>
-        <svg id="standard" className="graph">
-          <g id="links"></g>
-          <g id="nodes"></g>
-        </svg>
+        <div className="svgContainer">
+          <div id="standardTooltip" className="tooltip">?
+            <span className="tooltiptext">after inserting elements: click and drag to pan
+              use the scroll wheel to zoom</span>
+          </div>
+          <svg id="standard" className="graph">
+            <g id="links"></g>
+            <g id="nodes"></g>
+          </svg>
+        </div>
       </div>
     );
   }

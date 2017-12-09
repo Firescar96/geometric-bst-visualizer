@@ -3,8 +3,6 @@
 -make geometric should insert points with the same insertion order the user used
 -I don’t understand what “Make Standard BST” button does. What is a “standard BST”?
 -Nodes flying in from the left is maybe not the best aesthetic choice for animation, come in from bottom instead
--The scaling on the left is cut off. Autozoom instead of making user do it?
-
 van Emde Boas
 vEB delete? predecessor/successor?
 Is there some way to visualize not-recursively-stored mins?  It seems that what you’re visualizing is actually an x-fast tree. So you should probably call it that, unless you figure out how to visualize actual vEB.

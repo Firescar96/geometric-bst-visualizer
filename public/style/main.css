@@ -6,7 +6,7 @@
   height: 100%; }
 main#bst {
   width: 100%;
-  height: 100%;
+  height: 90%;
   display: flex;
   flex-direction: column; }
   main#bst #graphTitles {
@@ -19,6 +19,11 @@ main#bst {
         margin: auto; }
   main#bst #graphs {
     flex: 1; }
+    main#bst #graphs .svgContainer {
+      width: 90%;
+      height: 90%;
+      position: relative;
+      margin: 5% 5%; }
     main#bst #graphs > div {
       width: 50%;
       float: left;
@@ -26,8 +31,24 @@ main#bst {
       main#bst #graphs > div svg {
         width: 100%;
         height: 100%; }
+        main#bst #graphs > div svg#standard {
+          width: 90%;
+          height: 90%;
+          margin: 5% 5%;
+          padding: 5px;
+          border: solid 1px white; }
         main#bst #graphs > div svg .domain, main#bst #graphs > div svg .tick {
           stroke: #fff; }
+    main#bst #graphs #standardTooltip {
+      position: absolute;
+      top: 0;
+      right: 0;
+      border-radius: 50%;
+      border: solid 1px yellow;
+      width: 20px;
+      height: 20px;
+      text-align: center;
+      line-height: 20px; }
   main#bst #inserts {
     display: flex;
     justify-content: flex-start; }
@@ -162,3 +183,27 @@ button {
   font-size: 15px; }
   button + button {
     margin-left: 20px; }
+
+/* Tooltip container */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+  /* If you want dots under the hoverable text */ }
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+  /* Position the tooltip text - see examples below! */
+  position: absolute;
+  z-index: 1; }
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+  visibility: visible; }
