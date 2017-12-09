@@ -13422,7 +13422,6 @@ var StandardBSTGraph = function (_React$Component) {
 
     var _this = _possibleConstructorReturn(this, (StandardBSTGraph.__proto__ || Object.getPrototypeOf(StandardBSTGraph)).call(this, props));
 
-    _this.simulation = d3.forceSimulation();
     _this.makeGeometricBST = _this.makeGeometricBST.bind(_this);
     _this.selectRebalance = _this.selectRebalance.bind(_this);
     return _this;
@@ -13496,80 +13495,56 @@ var StandardBSTGraph = function (_React$Component) {
   }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
-      var _this2 = this;
-
       var zoom = d3.zoom().on('zoom', function () {
         d3.select('#nodes').attr('transform', d3.event.transform);
         d3.select('#links').attr('transform', d3.event.transform);
       });
-      var standard = d3.select('#standard').call(zoom);
-
-      this.simulation.on('tick', function () {
-        standard.selectAll('svg.node').transition().ease(function (v) {
-          return d3.easeSinIn(v);
-        }).duration(100).attr('x', function (d) {
-          if (d.parent !== null && d.parent.x !== null) {
-            var delta = NODE_RADIUS;
-            delta *= Math.pow(2, d.parent.height);
-            d.x = d == d.parent.left ? d.parent.x - delta : d.parent.x + delta;
-          }
-          return d.x;
-        }).attr('y', function (d) {
-          if (d.parent !== null && d.parent.y !== null) {
-            d.y = d.parent.y + 50;
-          }
-          return d.y;
-        });
-
-        if (_this2.props.root !== null) {
-          _this2.props.root.fx = standard.node().getBoundingClientRect().width / 2;
-          _this2.props.root.fy = standard.node().getBoundingClientRect().height / 3;
-        }
-
-        standard.selectAll('text.node').text(function (d) {
-          return d.value;
-        });
-
-        standard.selectAll('line.link').transition().duration(100).ease(function (v) {
-          return d3.easeSinIn(v);
-        }).attr('x1', function (d) {
-          return d.source.x + NODE_RADIUS * 2;
-        }).attr('y1', function (d) {
-          return d.source.y + NODE_RADIUS * 2;
-        }).attr('x2', function (d) {
-          return d.target.x + NODE_RADIUS * 2;
-        }).attr('y2', function (d) {
-          return d.target.y + NODE_RADIUS * 2;
-        });
-      });
-      this.componentDidUpdate();
+      d3.select('#standard').call(zoom);
     }
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
-      var _this3 = this;
+      var _this2 = this;
 
       if (this.props.root === null) return;
       var standard = d3.select('#standard');
 
-      function linkChildren(parent) {
+      var linkChildren = function linkChildren(d) {
         var linkList = [];
-        if (parent.left !== null) {
-          linkList.push({ source: parent, target: parent.left });
-          linkList.push.apply(linkList, _toConsumableArray(linkChildren(parent.left)));
+        if (d == _this2.props.root) {
+          d.x = standard.node().getBoundingClientRect().width / 2;
+          d.y = standard.node().getBoundingClientRect().height / 3;
+        } else {
+          var delta = NODE_RADIUS;
+          delta *= Math.pow(2, d.parent.height);
+          d.x = d == d.parent.left ? d.parent.x - delta : d.parent.x + delta;
+          d.y = d.parent.y + 50;
         }
-        if (parent.right !== null) {
-          linkList.push({ source: parent, target: parent.right });
-          linkList.push.apply(linkList, _toConsumableArray(linkChildren(parent.right)));
+
+        if (d.left !== null) {
+          linkList.push({ source: d, target: d.left });
+          linkList.push.apply(linkList, _toConsumableArray(linkChildren(d.left)));
+        }
+        if (d.right !== null) {
+          linkList.push({ source: d, target: d.right });
+          linkList.push.apply(linkList, _toConsumableArray(linkChildren(d.right)));
         }
         return linkList;
-      }
+      };
 
       var linkList = linkChildren(this.props.root);
       var link = standard.select('#links').selectAll('line.link').data(linkList, function (d) {
         return d.target.id;
       });
-      link.enter().append('line').attr('class', 'link').attr('stroke', '#ddd').attr('stroke-width', 5);
+      link.enter().append('line').attr('class', 'link').attr('x1', function (d) {
+        return d.source.x + NODE_RADIUS * 2;
+      }).attr('y1', function (d) {
+        return d.source.y + NODE_RADIUS * 2;
+      }).attr('x2', function (d) {
+        return d.target.x + NODE_RADIUS * 2;
+      }).attr('y2', function (d) {
+        return d.target.y + NODE_RADIUS * 2;
+      }).attr('stroke', '#ddd').attr('stroke-width', 5).attr('opacity', 0);
       link.exit().remove();
 
       var nodes = this.props.root.traversal();
@@ -13577,7 +13552,11 @@ var StandardBSTGraph = function (_React$Component) {
         return d.id;
       });
 
-      var nodeG = node.enter().append('svg').attr('class', 'node').attr('width', '40').attr('height', '40');
+      var nodeG = node.enter().append('svg').attr('class', 'node').attr('x', function (d) {
+        return d.x;
+      }).attr('y', function (d) {
+        return d.y;
+      }).attr('width', '40').attr('height', '40').attr('opacity', 0);
 
       nodeG.append('circle').attr('cx', '50%').attr('cy', '50%').attr('r', 19);
 
@@ -13593,11 +13572,30 @@ var StandardBSTGraph = function (_React$Component) {
       });
 
       node.exit().remove();
-      d3.selectAll('circle.node').attr('stroke', function (d) {
-        return _this3.props.root.lastTouched.key == d.key ? 'green' : null;
+
+      standard.selectAll('svg.node').transition().duration(500).attr('opacity', 1).attr('x', function (d) {
+        return d.x;
+      }).attr('y', function (d) {
+        return d.y;
       });
 
-      this.simulation.nodes(nodes).alpha(1).restart();
+      d3.selectAll('circle.node').attr('stroke', function (d) {
+        return _this2.props.root.lastTouched.key == d.key ? 'green' : null;
+      });
+
+      standard.selectAll('text.node').text(function (d) {
+        return d.value;
+      });
+
+      standard.selectAll('line.link').transition().duration(500).attr('x1', function (d) {
+        return d.source.x + NODE_RADIUS * 2;
+      }).attr('y1', function (d) {
+        return d.source.y + NODE_RADIUS * 2;
+      }).attr('x2', function (d) {
+        return d.target.x + NODE_RADIUS * 2;
+      }).attr('y2', function (d) {
+        return d.target.y + NODE_RADIUS * 2;
+      }).attr('opacity', 1);
     }
   }]);
 

@@ -46,7 +46,6 @@ function standardBSTReducer (state, action) {
 class StandardBSTGraph extends React.Component {
   constructor (props) {
     super(props);
-    this.simulation = d3.forceSimulation();
     this.makeGeometricBST = this.makeGeometricBST.bind(this);
     this.selectRebalance = this.selectRebalance.bind(this);
   }
@@ -96,64 +95,36 @@ class StandardBSTGraph extends React.Component {
         d3.select('#nodes').attr('transform', d3.event.transform);
         d3.select('#links').attr('transform', d3.event.transform);
       });
-    let standard = d3.select('#standard')
+    d3.select('#standard')
       .call(zoom);
-
-    this.simulation
-      .on('tick', () => {
-        standard.selectAll('svg.node').transition()
-          .ease(v => d3.easeSinIn(v))
-          .duration(100)
-          .attr('x', (d) => {
-            if(d.parent !== null && d.parent.x !== null) {
-              let delta = NODE_RADIUS;
-              delta *= Math.pow(2, d.parent.height);
-              d.x = d == d.parent.left ? d.parent.x - delta : d.parent.x + delta;
-            }
-            return d.x;
-          })
-          .attr('y', (d) => {
-            if(d.parent !== null && d.parent.y !== null) {
-              d.y = d.parent.y + 50;
-            }
-            return d.y;
-          });
-
-        if(this.props.root !== null) {
-          this.props.root.fx = standard.node().getBoundingClientRect().width / 2;
-          this.props.root.fy = standard.node().getBoundingClientRect().height / 3;
-        }
-
-        standard.selectAll('text.node')
-          .text((d) => d.value);
-
-        standard.selectAll('line.link').transition()
-          .duration(100)
-          .ease(v => d3.easeSinIn(v))
-          .attr('x1', d => d.source.x + NODE_RADIUS * 2)
-          .attr('y1', d => d.source.y + NODE_RADIUS * 2)
-          .attr('x2', d => d.target.x + NODE_RADIUS * 2)
-          .attr('y2', d => d.target.y + NODE_RADIUS * 2);
-      });
-    this.componentDidUpdate();
   }
 
   componentDidUpdate () {
     if(this.props.root === null)return;
     let standard = d3.select('#standard');
 
-    function linkChildren (parent) {
+    let linkChildren = (d) => {
       let linkList = [];
-      if(parent.left !== null) {
-        linkList.push({source: parent, target: parent.left});
-        linkList.push(...linkChildren(parent.left));
+      if(d == this.props.root) {
+        d.x = standard.node().getBoundingClientRect().width / 2;
+        d.y = standard.node().getBoundingClientRect().height / 3;
+      }else {
+        let delta = NODE_RADIUS;
+        delta *= Math.pow(2, d.parent.height);
+        d.x = d == d.parent.left ? d.parent.x - delta : d.parent.x + delta;
+        d.y = d.parent.y + 50;
       }
-      if(parent.right !== null) {
-        linkList.push({source: parent, target: parent.right});
-        linkList.push(...linkChildren(parent.right));
+
+      if(d.left !== null) {
+        linkList.push({source: d, target: d.left});
+        linkList.push(...linkChildren(d.left));
+      }
+      if(d.right !== null) {
+        linkList.push({source: d, target: d.right});
+        linkList.push(...linkChildren(d.right));
       }
       return linkList;
-    }
+    };
 
     let linkList = linkChildren(this.props.root);
     let link = standard.select('#links').selectAll('line.link').data(linkList, d => {
@@ -162,8 +133,13 @@ class StandardBSTGraph extends React.Component {
     link
       .enter().append('line')
       .attr('class', 'link')
+      .attr('x1', d => d.source.x + NODE_RADIUS * 2)
+      .attr('y1', d => d.source.y + NODE_RADIUS * 2)
+      .attr('x2', d => d.target.x + NODE_RADIUS * 2)
+      .attr('y2', d => d.target.y + NODE_RADIUS * 2)
       .attr('stroke', '#ddd')
-      .attr('stroke-width', 5);
+      .attr('stroke-width', 5)
+      .attr('opacity', 0);
     link.exit().remove();
 
     let nodes = this.props.root.traversal();
@@ -173,8 +149,11 @@ class StandardBSTGraph extends React.Component {
     let nodeG = node.enter()
       .append('svg')
       .attr('class', 'node')
+      .attr('x', (d) => d.x)
+      .attr('y', (d) => d.y)
       .attr('width', '40')
-      .attr('height', '40');
+      .attr('height', '40')
+      .attr('opacity', 0);
 
     nodeG
       .append('circle')
@@ -207,12 +186,28 @@ class StandardBSTGraph extends React.Component {
       });
 
     node.exit().remove();
+
+    standard.selectAll('svg.node')
+      .transition()
+      .duration(500)
+      .attr('opacity', 1)
+      .attr('x', (d) => d.x)
+      .attr('y', (d) => d.y);
+
     d3.selectAll('circle.node')
       .attr('stroke', d => this.props.root.lastTouched.key == d.key ? 'green' : null);
 
-    this.simulation.nodes(nodes)
-      .alpha(1)
-      .restart();
+    standard.selectAll('text.node')
+      .text((d) => d.value);
+
+    standard.selectAll('line.link').transition()
+      .duration(500)
+      .attr('x1', d => d.source.x + NODE_RADIUS * 2)
+      .attr('y1', d => d.source.y + NODE_RADIUS * 2)
+      .attr('x2', d => d.target.x + NODE_RADIUS * 2)
+      .attr('y2', d => d.target.y + NODE_RADIUS * 2)
+      .attr('opacity', 1);
+
   }
 }
 
