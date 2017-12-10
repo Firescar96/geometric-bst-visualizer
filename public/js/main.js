@@ -13109,6 +13109,7 @@ var GeometricBSTGraph = function (_React$Component) {
         };
         while (isDescending) {
           if (insertedPoint.key == parentNode.key) break;
+
           var touchedIndex = touchedPoints.indexOf(parentNode.key);
           var isLeft = (0, _main.lessThanComparator)(insertedPoint.key, parentNode.key);
           if (touchedIndex == -1) {
@@ -13125,18 +13126,12 @@ var GeometricBSTGraph = function (_React$Component) {
         }
         sbst.insert(insertedPoint.key, false, accessSequence);
 
-        console.log('iteration', insertedPoint);
         for (var i = 0; i < heap.queue.length; i++) {
-          console.log(heap.queue[i]);
-          //if(heap.queue[i].isSatisfier) {
-          //continue;
-          //}
 
           if (heap.queue[i].key == parentNode.key) {
             break;
           }
           if (heap.queue[i].key == insertedPoint.key) {
-            console.log('rotating', parentNode.key, insertedPoint.key);
             if ((0, _main.lessThanComparator)(parentNode.key, insertedPoint.key)) {
               parentNode.rotateLeft();
             } else if ((0, _main.lessThanComparator)(insertedPoint.key, parentNode.key)) {
@@ -13511,7 +13506,7 @@ var StandardBSTGraph = function (_React$Component) {
           _react2.default.createElement(
             'span',
             { className: 'tooltiptext' },
-            'When enabled the tree rebalances into an AVL tree'
+            'When enabled the tree rebalances on inserts to maintain the properties of an AVL tree'
           )
         ),
         _react2.default.createElement(
@@ -13531,7 +13526,7 @@ var StandardBSTGraph = function (_React$Component) {
             _react2.default.createElement(
               'span',
               { className: 'tooltiptext' },
-              'after inserting elements: click and drag to pan, use the scroll wheel to zoom'
+              'After inserting elements: click and drag to pan, use the scroll wheel to zoom'
             )
           ),
           _react2.default.createElement(
