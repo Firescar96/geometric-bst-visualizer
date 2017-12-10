@@ -19,13 +19,13 @@ function standardBSTReducer (state, action) {
       satisfierPoints: [],
     };
   }
-
   switch (action.type) {
     case SET_ROOT:
       return Object.assign({}, state, {
         root: action.root,
         nonce: ++state.nonce,
-        accessSequence: [{key: action.root.key, isAncestor: false}],
+        accessSequence: action.accessSequence,
+        timestep: action.accessSequence.reduce((a, b) => a + !b.isAncestor, 1),
         satisfierPoints: [],
       });
     case INSERT_NODE:

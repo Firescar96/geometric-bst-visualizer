@@ -23,7 +23,7 @@ class GemetricBST {
   insert (key) {
     if(key instanceof Point) {
       this.points.push(key);
-      this.maxTime = key.isSatisfier ? this.maxTime : Math.max(this.maxTime, key.time);
+      this.maxTime = key.isSatisfier ? this.maxTime : Math.max(this.maxTime, key.time + 1);
       this.lastTouched = key;
     }else {
       let newElement = new Point(key, this.maxTime);

@@ -71,32 +71,46 @@ class GeometricBSTGraph extends React.Component {
         }
       }
 
+      //accessSequence.push({key: parentNode.key, isAncestor: true});
       //use the touchedPoints to figure out where to insert the insertedPoint
       let isDescending = true;
       let descend = (node) => {
         if(node === null)return false;
-        let touchedIndex = touchedPoints.indexOf(node.key);
-        if(touchedIndex == -1)return false;
-        touchedPoints.splice(touchedIndex, 1);
         parentNode = node;
-        accessSequence.push({key: node.key, isAncestor: true});
+        //accessSequence.push({key: node.key, isAncestor: true});
         return true;
       };
       while(isDescending) {
-        isDescending = descend(parentNode.left) || descend(parentNode.right) || false;
-      }
-      accessSequence.push({key: insertedPoint.key, isAncestor: false});
-      parentNode.insert(insertedPoint.key, false);
-
-      for(var i = 0; i < heap.queue.length; i++) {
-        if(heap.queue[i].isSatisfier) {
+        if(insertedPoint.key == parentNode.key)break;
+        let touchedIndex = touchedPoints.indexOf(parentNode.key);
+        let isLeft = lessThanComparator(insertedPoint.key, parentNode.key);
+        if(touchedIndex == -1) {
+          if(isLeft) parentNode.rotateRight();
+          else parentNode.rotateLeft();
           continue;
+        }else {
+          touchedPoints.splice(touchedIndex, 1);
         }
+        if(isLeft) {
+          isDescending = descend(parentNode.left);
+        }else {
+          isDescending = descend(parentNode.right);
+        }
+      }
+      sbst.insert(insertedPoint.key, false, accessSequence);
+
+      console.log('iteration', insertedPoint);
+      for(var i = 0; i < heap.queue.length; i++) {
+        console.log(heap.queue[i]);
+        //if(heap.queue[i].isSatisfier) {
+        //continue;
+        //}
 
         if(heap.queue[i].key == parentNode.key) {
           break;
         }
         if(heap.queue[i].key == insertedPoint.key) {
+          console.log('rotating', parentNode.key, insertedPoint.key);
           if(lessThanComparator(parentNode.key, insertedPoint.key)) {
             parentNode.rotateLeft();
           }else if(lessThanComparator(insertedPoint.key, parentNode.key)) {
@@ -105,6 +119,8 @@ class GeometricBSTGraph extends React.Component {
           break;
         }
       }
+      //parentNode.insert(insertedPoint.key, false, accessSequence);
+      //accessSequence.push({key: insertedPoint.key, isAncestor: false});
     }
     sbst.syncAttributes();
     store.dispatch({type: SET_ROOT, root: sbst, accessSequence});

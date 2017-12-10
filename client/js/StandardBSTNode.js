@@ -23,15 +23,15 @@ class Node {
     this.depth = this.parent ? this.parent.depth + 1 : 0;
     if(this.left) {
       this.left.syncAttributes();
-      this.numLeftChildren = this.left.numLeftChildren + this.left.numRightChildren;
+      this.numLeftChildren = this.left.numLeftChildren + this.left.numRightChildren + 1;
       this.height = this.left.height + 1;
     }
     if(this.right) {
       this.right.syncAttributes();
-      this.numRightChildren = this.right.numRightChildren + this.right.numRightChildren;
+      this.numRightChildren = this.right.numLeftChildren + this.right.numRightChildren + 1;
       this.height = Math.max(this.height, this.right.height + 1);
     }
-    //this.lastTouched = null;
+    this.lastTouched = this;
   }
 
   //inserts a key and rebalances
