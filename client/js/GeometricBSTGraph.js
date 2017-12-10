@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import *as d3 from 'd3';
 import BST from './GeometricBST';
 import Node from './StandardBSTNode';
-import {store} from './main';
+import {store, lessThanComparator} from './main';
 import MinHeap from './MinHeap';
 import {ADD_POINT, SET_ROOT, CLEAR_POINTS} from './constants';
 
@@ -20,7 +20,7 @@ function geometricBSTReducer (state, action) {
       if(action.point !== undefined) {
         state.root.insert(action.point);
       }else if(action.newElement !== undefined) {
-        state.root.insert(action.newElement, action.newElement);
+        state.root.insert(action.newElement);
       }
       return Object.assign({}, state, {
         nonce: ++state.nonce,
@@ -52,8 +52,10 @@ class GeometricBSTGraph extends React.Component {
     this.props.root.points.forEach(point => {
       heap.insert(point);
     });
+
     let rootPoint = heap.pop();
-    let sbst = new Node(rootPoint.key, rootPoint.value);
+    let sbst = new Node(rootPoint.key);
+    let accessSequence = [{key: rootPoint.key, isAncestor: false}];
     while(heap.hasNext() > 0) {
       //get all the touchedPoints for a particular access time
       let parentNode = sbst;
@@ -63,34 +65,42 @@ class GeometricBSTGraph extends React.Component {
       while(heap.peek() !== undefined && heap.peek().time === accessTime) {
         let point = heap.pop();
         if(point.isSatisfier) {
-          touchedPoints.push(point.key);
+          touchedPoints.push(point.key); '';
         }else {
           insertedPoint = point;
         }
       }
-
+      console.log('on timestep', touchedPoints, insertedPoint);
       //use the touchedPoints to figure out where to insert the insertedPoint
       let isDescending = true;
       let descend = (node) => {
-        if(node === undefined)return;
+        if(node === null)return false;
         let touchedIndex = touchedPoints.indexOf(node.key);
         if(touchedIndex == -1)return false;
-        touchedPoints = touchedPoints.splice(touchedIndex);
+        touchedPoints.splice(touchedIndex, 1);
         parentNode = node;
-        //return true if found
+        accessSequence.push({key: node.key, isAncestor: true});
+        console.log({key: node.key, isAncestor: true});
+        return true;
       };
       while(isDescending) {
-        isDescending = descend(parent.left) || descend(parent.right) || false;
+        isDescending = descend(parentNode.left) || descend(parentNode.right) || false;
       }
-      parentNode.insert(insertedPoint.key, insertedPoint.value, false);
+      accessSequence.push({key: insertedPoint.key, isAncestor: false});
+      parentNode.insert(insertedPoint.key, false);
+      console.log();
       for(var i = 0; i < heap.queue.length; i++) {
+        if(heap.queue[i].isSatisfier) {
+          continue;
+        }
+
         if(heap.queue[i].key == parentNode.key) {
           break;
         }
         if(heap.queue[i].key == insertedPoint.key) {
-          if(parentNode.key < insertedPoint.key) {
+          if(lessThanComparator(parentNode.key, insertedPoint.key)) {
             parentNode.rotateLeft();
-          }else if(parentNode.key > insertedPoint.key) {
+          }else if(lessThanComparator(insertedPoint.key, parentNode.key)) {
             parentNode.rotateRight();
           }
           break;
@@ -98,7 +108,7 @@ class GeometricBSTGraph extends React.Component {
       }
     }
 
-    store.dispatch({type: SET_ROOT, root: sbst});
+    store.dispatch({type: SET_ROOT, root: sbst, accessSequence});
   }
   runGreedyAlgorithm () {
     let geometric = d3.select('#geometric');
@@ -110,7 +120,7 @@ class GeometricBSTGraph extends React.Component {
     return (
       <div>
         <button type="button" onClick={this.runGreedyAlgorithm}>Run Greedy Algorithm</button>
-        <button onClick={this.makeStandardBst}>Make Standard BST</button>
+        <button onClick={this.makeStandardBst}>Generate Standard View</button>
         <svg id="geometric" className="graph"></svg>
       </div>
     );
@@ -118,8 +128,7 @@ class GeometricBSTGraph extends React.Component {
   componentDidUpdate () {
     let thisReact = this;
     let points = this.props.root.points.sort((a, b) => {
-      let lessThan = (isNaN(a.key) && a.key.localeCompare(b.key) < 0 ) || (!isNaN(a.key) && isNaN(b.key)) || a.key < b.key;
-      return lessThan ? -1 : 1;
+      return lessThanComparator(a.key, b.key) ? -1 : 1;
     });
     let geometric = d3.select('#geometric');
     let width = geometric.node().getBoundingClientRect().width;
@@ -127,7 +136,7 @@ class GeometricBSTGraph extends React.Component {
     let height = geometric.node().getBoundingClientRect().height;
     let heightMargin = height / 5;
 
-    let xDomainIdxs = points.map(x => (x.key)).map((x, i, a) => a.indexOf(x)).filter((x, i, a) => a.indexOf(x) == i);
+    let xDomainIdxs = points.map(x => String(x.key)).map((x, i, a) => a.indexOf(x)).filter((x, i, a) => a.indexOf(x) == i);
     this.xRange = d3.scalePoint().range([widthMargin, width - widthMargin])
     //the domain is over all keys, pruning for duplicates
       .domain(xDomainIdxs.map(x => points[x].key))
@@ -138,7 +147,7 @@ class GeometricBSTGraph extends React.Component {
       .padding(1);
 
     let xAxis = d3.axisBottom(this.xRange)
-      .tickFormat((d, i) => points[xDomainIdxs[i]].value);
+      .tickFormat((d, i) => points[xDomainIdxs[i]].key);
     let yAxis = d3.axisLeft(this.yRange);
 
     geometric.selectAll('g.xAxis')
@@ -147,7 +156,7 @@ class GeometricBSTGraph extends React.Component {
     geometric.selectAll('g.yAxis')
       .call(yAxis);
 
-    let point = geometric.selectAll('circle.point').data(points, d=> d.key + ':' + d.time);
+    let point = geometric.selectAll('circle.point').data(points, d=> d.key + ':' + d.time + ':'  + d.isSatisfier);
     point.enter()
       .append('circle')
       .attr('class', 'point invisible')
@@ -209,7 +218,10 @@ class GeometricBSTGraph extends React.Component {
             return 'translate(0,' + -satisfiedHeight + ')';
           })
           .attr('width', d => Math.abs(thisReact.xRange(d.base.key) - thisReact.xRange(d.satisfied.key)))
-          .attr('height', d => Math.abs(thisReact.yRange(d.base.time) - thisReact.yRange(d.satisfied.time)));
+          .attr('height', d => Math.abs(thisReact.yRange(d.base.time) - thisReact.yRange(d.satisfied.time)))
+          .transition()
+          .delay(500)
+          .attr('opacity', 0);
       });
 
     geometric.selectAll('rect.satisfier.invisible')
@@ -231,7 +243,10 @@ class GeometricBSTGraph extends React.Component {
         return 'translate(0,' + -satisfiedHeight + ')';
       })
       .attr('width', d => Math.abs(this.xRange(d.base.key) - this.xRange(d.satisfied.key)))
-      .attr('height', d => Math.abs(this.yRange(d.base.time) - this.yRange(d.satisfied.time)));
+      .attr('height', d => Math.abs(this.yRange(d.base.time) - this.yRange(d.satisfied.time)))
+      .transition()
+      .delay(500)
+      .attr('opacity', 0);
   }
 
   componentDidMount () {

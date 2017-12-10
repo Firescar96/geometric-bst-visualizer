@@ -1,7 +1,5 @@
--i expect to see dots showing which nodes were touched on insertion reflected in the geometric view
 -note that the tree rebalancing is based on AVL
 -make geometric should insert points with the same insertion order the user used
--I don’t understand what “Make Standard BST” button does. What is a “standard BST”?
 
 van Emde Boas
 vEB delete? predecessor/successor?

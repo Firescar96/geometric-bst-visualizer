@@ -16,6 +16,11 @@ let store = createStore(combineReducers({
 }));
 export {store}; //exported here so it's available in all the subcompnents
 
+let lessThanComparator = (a, b) => {
+  return (isNaN(a) && a.localeCompare(b) < 0 ) || (!isNaN(a) && isNaN(b)) || a < b;
+};
+export {lessThanComparator};
+
 render((
   <Provider store={store}>
     <HashRouter>

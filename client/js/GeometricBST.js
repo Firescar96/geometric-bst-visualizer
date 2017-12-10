@@ -1,7 +1,8 @@
+import {lessThanComparator} from './main';
+
 class Point {
-  constructor (key, value, time, satisfier = false) {
+  constructor (key, time, satisfier = false) {
     this.key = key;
-    this.value = value;
     this.time = time;
     this.isSatisfier = satisfier; //used in the greedy algorithm, points inserted for satisfiability need not be satisfied
     this.delay = 0;
@@ -11,7 +12,7 @@ class Point {
 class GemetricBST {
   constructor () {
     this.points = [];
-    this.maxTime = 0;
+    this.maxTime = 1;
     //optimization, if we have already satified points up to this time there is no need to check
     this.maxSatisfiedTime = 1;
     //for display purposes need to track how many points created each iteration of greedy algorithm
@@ -19,14 +20,13 @@ class GemetricBST {
     this.lastTouched = null; //needed for d3 to hightlight the most recent point
   }
 
-  insert (key, value) {
+  insert (key) {
     if(key instanceof Point) {
       this.points.push(key);
-      this.maxTime = Math.max(this.maxTime, key.time);
+      this.maxTime = key.isSatisfier ? this.maxTime : Math.max(this.maxTime, key.time);
       this.lastTouched = key;
     }else {
-      key = String(key);
-      let newElement = new Point(key, value, this.maxTime + 1);
+      let newElement = new Point(key, this.maxTime);
       this.points.push(newElement);
       this.maxTime++;
       this.lastTouched = newElement;
@@ -80,14 +80,14 @@ class GemetricBST {
       if(unsatisfiedPoint === null)return;
       //this checks if there are satisfying points along the bottom segment of the
       //satisfiability box
-      let rangeMin = unsatisfiedPoint.key.localeCompare(levelPoint.key) == -1 ? unsatisfiedPoint.key : levelPoint.key;
-      let rangeMax = unsatisfiedPoint.key.localeCompare(levelPoint.key) == 1 ? unsatisfiedPoint.key : levelPoint.key;
+      let rangeMin = lessThanComparator(unsatisfiedPoint.key, levelPoint.key) ? unsatisfiedPoint.key : levelPoint.key;
+      let rangeMax = lessThanComparator(levelPoint.key, unsatisfiedPoint.key) ? unsatisfiedPoint.key : levelPoint.key;
       let valueSetsKeys = Object.keys(valueSets);
 
       for(let valueSetIdx = 0; valueSetIdx < valueSetsKeys.length; valueSetIdx++) {
         let valueSetVal = valueSetsKeys[valueSetIdx];
-        if(valueSetVal.localeCompare(rangeMin) == -1)continue;
-        if(valueSetVal.localeCompare(rangeMax) == 1)break;
+        if(lessThanComparator(valueSetVal, rangeMin))continue;
+        if(lessThanComparator(rangeMax, valueSetVal))break;
         if(valueSetVal == unsatisfiedPoint.key)continue;
         if(!valueSets[valueSetVal])continue;
         if(valueSets[valueSetVal].includes(unsatisfiedPoint.time))return;
@@ -95,14 +95,14 @@ class GemetricBST {
       //this checks if there are satisfying points along the top segment of the
       //satisfiability box
       let isTopSatisfied;
-      if(unsatisfiedPoint.key.localeCompare(levelPoint.key) == -1) {
+      if(lessThanComparator(unsatisfiedPoint.key, levelValues.key)) {
         isTopSatisfied = levelValues.filter(x => x < rangeMax && x >= rangeMin).length > 0;
       }else {
         isTopSatisfied = levelValues.filter(x => x <= rangeMax && x > rangeMin).length > 0;
       }
       if(isTopSatisfied)return;
 
-      let satisfier = new Point(unsatisfiedPoint.key, unsatisfiedPoint.key, levelPoint.time, true);
+      let satisfier = new Point(unsatisfiedPoint.key, levelPoint.time, true);
       satisfier.delay = this.numIterationSatisfiers;
       this.numIterationSatisfiers++;
       this.points.push(satisfier);
@@ -123,12 +123,12 @@ class GemetricBST {
       let maxmin = null;
       for(let unsatIndex = 0; unsatIndex < unsatisfiedPoints.length; unsatIndex++) {
         let unsatPoint = unsatisfiedPoints[unsatIndex];
-        if(unsatPoint.key.localeCompare(levelPoint.key) == 1 &&
-          (minmax === null || unsatPoint.key.localeCompare(minmax.key) == -1)) {
+        if(lessThanComparator(levelPoint.key, unsatPoint.key) &&
+          (minmax === null || lessThanComparator(unsatPoint.key, minmax.key))) {
           minmax = unsatPoint;
         }
-        if(unsatPoint.key.localeCompare(levelPoint.key) == -1 &&
-          (maxmin === null || unsatPoint.key.localeCompare(maxmin.key) == 1)) {
+        if(lessThanComparator(unsatPoint.key, levelPoint.key) &&
+          (maxmin === null || lessThanComparator(maxmin.key, unsatPoint.key))) {
           maxmin = unsatPoint;
         }
       }

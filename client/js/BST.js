@@ -27,6 +27,7 @@ class BST extends React.Component {
   }
   handleInsert (newElement) {
     if(newElement === '')return;
+    newElement = isNaN(newElement) ? newElement : parseFloat(newElement);
     if(this.state.standard) {
       store.dispatch({ type: INSERT_NODE, newElement });
     }
@@ -135,7 +136,7 @@ class BST extends React.Component {
           </label>
         </div>
         <div id="graphs">
-          <StandardBSTGraph />
+          <StandardBSTGraph geometricEnabled={this.state.geometric} />
           <GeometricBSTGraph />
         </div>
       </main>

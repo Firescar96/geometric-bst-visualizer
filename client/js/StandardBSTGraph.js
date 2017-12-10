@@ -14,6 +14,9 @@ function standardBSTReducer (state, action) {
       root: null,
       nonce: 0, //used to force an update to the DOM
       rebalance: true, //should the bst rebalance or not
+      accessSequence: [], //used to construct the geometric view
+      timestep: 1,
+      satisfierPoints: [],
     };
   }
 
@@ -22,17 +25,32 @@ function standardBSTReducer (state, action) {
       return Object.assign({}, state, {
         root: action.root,
         nonce: ++state.nonce,
+        accessSequence: [{key: action.root.key, isAncestor: false}],
+        satisfierPoints: [],
       });
     case INSERT_NODE:
       if(state.root === null) {
+        let newNode = new Node(action.newElement);
         return Object.assign({}, state, {
-          root: new Node(action.newElement, action.newElement),
+          root: newNode,
           nonce: ++state.nonce,
+          accessSequence: [{key: action.newElement, isAncestor: false}],
+          timestep: ++state.timestep,
+          satisfierPoints: [],
         });
       }
-      state.root.insert(action.newElement, action.newElement, state.rebalance);
+      let previousSequenceLength = state.accessSequence.length;
+      let satisfierPoints = [];
+      state.root.insert(action.newElement, state.rebalance, state.accessSequence);
+      for(var i = previousSequenceLength; i < state.accessSequence.length - 1; i++) {
+        let point = new Point(state.accessSequence[i].key, state.timestep, true);
+        satisfierPoints.push(point);
+      }
       return Object.assign({}, state, {
         nonce: ++state.nonce,
+        accessSequence: state.accessSequence,
+        timestep: state.timestep + 1,
+        satisfierPoints: satisfierPoints,
       });
     case REBALANCE:
       return Object.assign({}, state, {
@@ -51,15 +69,12 @@ class StandardBSTGraph extends React.Component {
   }
   makeGeometricBST () {
     store.dispatch({type: CLEAR_POINTS});
-    let nodes = this.props.root.levelTraversal();
+    let nodes = this.props.accessSequence;
+    let timestep = 1;
     nodes.forEach((node, i) => {
-      let point = new Point(node.key, node.value, i + 1);
+      let point = new Point(node.key, timestep, node.isAncestor);
       store.dispatch({type: ADD_POINT, point});
-      node.getAncestors().forEach(ancestor => {
-        point = new Point(ancestor.key, ancestor.value, i + 1);
-        point.isSatisfier = true;
-        store.dispatch({type: ADD_POINT, point});
-      });
+      if(!node.isAncestor) timestep++;
     });
   }
   selectRebalance (event) {
@@ -68,7 +83,7 @@ class StandardBSTGraph extends React.Component {
   render () {
     return (
       <div id="standardBSTGraph">
-        <button onClick={this.makeGeometricBST}>Make Geometric BST</button>
+        <button onClick={this.makeGeometricBST}>Generate Geometric View</button>
         <span className="label">Rebalancing</span>
         <label htmlFor="rebalance" className="toggle">
           <input type="checkbox" value="standard" id="rebalance"
@@ -101,6 +116,12 @@ class StandardBSTGraph extends React.Component {
 
   componentDidUpdate () {
     if(this.props.root === null)return;
+    if(this.props.geometricEnabled) {
+      //if the last insert generated satisfier points those need to be sent to the geometricBST
+      this.props.satisfierPoints.forEach(point => {
+        store.dispatch({type: ADD_POINT, point});
+      });
+    }
     let standard = d3.select('#standard');
 
     let linkChildren = (d) => {
@@ -169,7 +190,7 @@ class StandardBSTGraph extends React.Component {
       .attr('y', '50%')
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
-      .text((d) => d.value);
+      .text((d) => d.key);
 
     nodeG
       .append('circle')
@@ -182,7 +203,9 @@ class StandardBSTGraph extends React.Component {
       .on('click', (d1) => {
         d3.selectAll('circle.node')
           .attr('stroke', d2 => d1.key == d2.key ? 'green' : null);
-        store.dispatch({ type: ADD_POINT, newElement: d1.key });
+        if(this.props.geometricEnabled) {
+          store.dispatch({ type: ADD_POINT, newElement: d1.key });
+        }
       });
 
     node.exit().remove();
@@ -198,7 +221,7 @@ class StandardBSTGraph extends React.Component {
       .attr('stroke', d => this.props.root.lastTouched.key == d.key ? 'green' : null);
 
     standard.selectAll('text.node')
-      .text((d) => d.value);
+      .text((d) => d.key);
 
     standard.selectAll('line.link').transition()
       .duration(500)
@@ -216,6 +239,8 @@ export default connect(function (state, ownProps) {
     root: state.standardBST.root,
     nonce: state.standardBST.nonce,
     rebalance: state.standardBST.rebalance,
+    accessSequence: state.standardBST.accessSequence,
+    satisfierPoints: state.standardBST.satisfierPoints,
   };
 })(StandardBSTGraph);
 

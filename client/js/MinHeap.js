@@ -1,3 +1,4 @@
+import {lessThanComparator} from './main';
 class MinHeap {
   constructor (criteria) {
     this.criteria = criteria;
@@ -57,7 +58,7 @@ class MinHeap {
     if(this.queue[target] === undefined || this.queue[self] === undefined) {
       return false;
     }
-    return (this.queue[self][this.criteria] < this.queue[target][this.criteria]);
+    return lessThanComparator(this.queue[self][this.criteria], this.queue[target][this.criteria]);
 
   }
   getParentIndex (index) {

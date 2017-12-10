@@ -1,11 +1,12 @@
+import {lessThanComparator} from './main';
+
 //BST balanced by height
 class Node {
-  constructor (key, value, parent) {
+  constructor (key, parent) {
     this.parent = parent || null;
     this.left = null;
     this.right = null;
     this.key = key;
-    this.value = value || key;
     this.numLeftChildren = 0;
     this.numRightChildren = 0;
     this.height = 0;
@@ -18,30 +19,31 @@ class Node {
 
   //inserts a key and rebalances
   //returns number of new children
-  insert (key, value, rebalance = true) {
-
-    key = isNaN(key) ? key : parseFloat(key);
-    value = value || key;
+  insert (key, rebalance = true, accessSequence = []) {
     if(key == this.key) {
       this.lastTouched = this;
+      accessSequence.push({key: this.key, isAncestor: false});
       return 0;
     }
+    accessSequence.push({key: this.key, isAncestor: true});
 
-    if((isNaN(key) && key.localeCompare(this.key) < 0 ) || (!isNaN(key) && isNaN(this.key)) || key < this.key) {
+    if(lessThanComparator(key, this.key)) {
       if(this.left === null) {
         this.numLeftChildren++;
-        this.left = new Node(key, value, this);
+        this.left = new Node(key, this);
+        accessSequence.push({key, isAncestor: false});
       }else {
-        this.numLeftChildren += this.left.insert(key, value, rebalance);
+        this.numLeftChildren += this.left.insert(key, rebalance, accessSequence);
       }
       this.height = Math.max(this.height, 1 + this.left.height);
       this.lastTouched = this.left.lastTouched;
     }else {
       if(this.right === null) {
         this.numRightChildren++;
-        this.right = new Node(key, value, this);
+        this.right = new Node(key, this);
+        accessSequence.push({key, isAncestor: false});
       }else {
-        this.numRightChildren += this.right.insert(key, value, rebalance);
+        this.numRightChildren += this.right.insert(key, rebalance, accessSequence);
       }
       this.height = Math.max(this.height, 1 + this.right.height);
       this.lastTouched = this.right.lastTouched;
@@ -66,10 +68,10 @@ class Node {
         (leftNode.numLeftChildren > 0 && leftNode.numRightChildren > 0 && leftNode.left.height > leftNode.right.height)
         //^maybe not necessary
       ) {
-        //extra value is on the outside -> single rotation
+        //extra key is on the outside -> single rotation
         this.rotateRight();
       }else {
-        //extra value is on the inside -> double rotation
+        //extra key is on the inside -> double rotation
         leftNode.rotateLeft();
         this.rotateRight();
       }
@@ -79,10 +81,10 @@ class Node {
       if((rightNode.numRightChildren > 0 && rightNode.numLeftChildren == 0) ||
         (rightNode.numLeftChildren > 0 && rightNode.numRightChildren > 0 && rightNode.right.height > rightNode.left.height)
       ) {
-        //extra value is on the outside -> single rotation
+        //extra key is on the outside -> single rotation
         this.rotateLeft();
       }else {
-        //extra value is on the inside -> double rotation
+        //extra key is on the inside -> double rotation
         rightNode.rotateRight();
         this.rotateLeft();
       }
@@ -101,9 +103,6 @@ class Node {
     var temp = this.key;
     this.key = rightNode.key;
     rightNode.key = temp;
-    temp = this.value;
-    this.value = rightNode.value;
-    rightNode.value = temp;
 
     this.right = rightNode.right;
     this.numRightChildren -= rightNode.numLeftChildren + 1;
@@ -133,9 +132,6 @@ class Node {
     var temp = this.key;
     this.key = leftNode.key;
     leftNode.key = temp;
-    temp = this.value;
-    this.value = leftNode.value;
-    leftNode.value = temp;
 
     this.left = leftNode.left;
     this.numLeftChildren -= leftNode.numRightChildren + 1;
@@ -190,7 +186,7 @@ class Node {
   find (key) {
     if(key == this.key) {
       return this;
-    }else if((isNaN(key) && key.localeCompare(this.key) < 0 ) || (!isNaN(key) && isNaN(this.key)) || key < this.key) {
+    }else if(lessThanComparator(key, this.key)) {
       return this.numLeftChildren > 0 ? this.left.find(key) : null;
     }
 
