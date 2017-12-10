@@ -70,7 +70,7 @@ class GeometricBSTGraph extends React.Component {
           insertedPoint = point;
         }
       }
-      console.log('on timestep', touchedPoints, insertedPoint);
+
       //use the touchedPoints to figure out where to insert the insertedPoint
       let isDescending = true;
       let descend = (node) => {
@@ -80,7 +80,6 @@ class GeometricBSTGraph extends React.Component {
         touchedPoints.splice(touchedIndex, 1);
         parentNode = node;
         accessSequence.push({key: node.key, isAncestor: true});
-        console.log({key: node.key, isAncestor: true});
         return true;
       };
       while(isDescending) {
@@ -88,7 +87,7 @@ class GeometricBSTGraph extends React.Component {
       }
       accessSequence.push({key: insertedPoint.key, isAncestor: false});
       parentNode.insert(insertedPoint.key, false);
-      console.log();
+
       for(var i = 0; i < heap.queue.length; i++) {
         if(heap.queue[i].isSatisfier) {
           continue;
@@ -107,7 +106,7 @@ class GeometricBSTGraph extends React.Component {
         }
       }
     }
-
+    sbst.syncAttributes();
     store.dispatch({type: SET_ROOT, root: sbst, accessSequence});
   }
   runGreedyAlgorithm () {

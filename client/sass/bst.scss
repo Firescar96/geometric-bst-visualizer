@@ -51,18 +51,6 @@ main#bst {
         }
       }
     }
-
-    #standardTooltip {
-      position: absolute;
-      top: 0;
-      right: 0;
-      border-radius: 50%;
-      border: solid 1px yellow;
-      width: 20px;
-      height: 20px;
-      text-align: center;
-      line-height: 20px;
-    }
   }
 
   #inserts {
@@ -70,9 +58,8 @@ main#bst {
     justify-content: flex-start;
 
     div {
-      margin-top: auto;
-      margin-bottom: auto;
-      padding: 10px;
+      margin: auto 5px;
+      padding: 10px 0;
     }
   }
 

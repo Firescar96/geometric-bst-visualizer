@@ -54,13 +54,13 @@ class BST extends React.Component {
     this.runningSequence = true;
     (async () => {
     this.handleInsert(1);
-    await sleep(1500)
+    await sleep(1000)
     this.handleInsert(2);
-    await sleep(1500)
+    await sleep(1000)
     this.handleInsert(3);
-    await sleep(1500)
+    await sleep(1000)
     this.handleInsert(4);
-    await sleep(1500)
+    await sleep(1000)
     this.handleInsert(5);
     this.runningSequence = false;
   })()
@@ -109,8 +109,8 @@ class BST extends React.Component {
         <h1 id="title">BST Visualizer</h1>
         <div id="graphTitles">
           <div>
-            <h2>Standard View</h2>
-            <h2>Geometric View</h2>
+            <h2><a href="https://en.wikipedia.org/wiki/Binary_search_tree">Standard View</a></h2>
+            <h2><a href="https://en.wikipedia.org/wiki/Geometry_of_binary_search_trees">Geometric View</a></h2>
           </div>
         </div>
         <form id="insertElement" onSubmit={this.insertElement}>
@@ -122,13 +122,22 @@ class BST extends React.Component {
         </form>
         <div id="inserts">
           <h4>Enable Inserts:</h4>
+          <div className="tooltip">?
+            <span className="tooltiptext">Note that selectively inserting into one structure will cause inconsistencies between them until 1) page refresh or 2) the "Generate Geometric/Standard View" button is pressed</span>
+          </div>
           <div>Standard View</div>
+          <div className="tooltip">?
+            <span className="tooltiptext">When enabled all touched points for a particular insert will also be inserted into the geometric view.</span>
+          </div>
           <label htmlFor="standardInsert" className="toggle">
             <input type="checkbox" value="standard" id="standardInsert"
               onChange={this.selectView}  checked={this.state.standard}/>
             <span></span>
           </label>
           <div>Geometric View</div>
+          <div className="tooltip">?
+            <span className="tooltiptext">When enabled satisfier points from the standard view will appear in the geometric view.</span>
+          </div>
           <label htmlFor="geometricInsert" className="toggle">
             <input type="checkbox" value="geometric" id="geometricInsert"
               onChange={this.selectView}  checked={this.state.geometric}/>

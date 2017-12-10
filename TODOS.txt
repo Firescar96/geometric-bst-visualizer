@@ -1,6 +1,3 @@
--note that the tree rebalancing is based on AVL
--make geometric should insert points with the same insertion order the user used
-
 van Emde Boas
 vEB delete? predecessor/successor?
 Is there some way to visualize not-recursively-stored mins?  It seems that what you’re visualizing is actually an x-fast tree. So you should probably call it that, unless you figure out how to visualize actual vEB.

@@ -13098,7 +13098,7 @@ var GeometricBSTGraph = function (_React$Component) {
             insertedPoint = point;
           }
         }
-        console.log('on timestep', touchedPoints, insertedPoint);
+
         //use the touchedPoints to figure out where to insert the insertedPoint
         var isDescending = true;
         var descend = function descend(node) {
@@ -13108,7 +13108,6 @@ var GeometricBSTGraph = function (_React$Component) {
           touchedPoints.splice(touchedIndex, 1);
           parentNode = node;
           accessSequence.push({ key: node.key, isAncestor: true });
-          console.log({ key: node.key, isAncestor: true });
           return true;
         };
         while (isDescending) {
@@ -13116,7 +13115,7 @@ var GeometricBSTGraph = function (_React$Component) {
         }
         accessSequence.push({ key: insertedPoint.key, isAncestor: false });
         parentNode.insert(insertedPoint.key, false);
-        console.log();
+
         for (i = 0; i < heap.queue.length; i++) {
           if (heap.queue[i].isSatisfier) {
             continue;
@@ -13141,7 +13140,7 @@ var GeometricBSTGraph = function (_React$Component) {
 
         _loop();
       }
-
+      sbst.syncAttributes();
       _main.store.dispatch({ type: _constants.SET_ROOT, root: sbst, accessSequence: accessSequence });
     }
   }, {
@@ -13496,6 +13495,16 @@ var StandardBSTGraph = function (_React$Component) {
           'Rebalancing'
         ),
         _react2.default.createElement(
+          'div',
+          { id: 'rebalancingTooltip', className: 'tooltip' },
+          '?',
+          _react2.default.createElement(
+            'span',
+            { className: 'tooltiptext' },
+            'When enabled the tree rebalances into an AVL tree'
+          )
+        ),
+        _react2.default.createElement(
           'label',
           { htmlFor: 'rebalance', className: 'toggle' },
           _react2.default.createElement('input', { type: 'checkbox', value: 'standard', id: 'rebalance',
@@ -13512,7 +13521,7 @@ var StandardBSTGraph = function (_React$Component) {
             _react2.default.createElement(
               'span',
               { className: 'tooltiptext' },
-              'after inserting elements: click and drag to pan use the scroll wheel to zoom'
+              'after inserting elements: click and drag to pan, use the scroll wheel to zoom'
             )
           ),
           _react2.default.createElement(
@@ -13927,11 +13936,31 @@ var Node = function () {
     this.lastTouched = this; //used by d3 to select the last touched node
   }
 
-  //inserts a key and rebalances
-  //returns number of new children
+  //after manually constructing a BST from the geometric view use this function to
+  //make the attributes accurate
 
 
   _createClass(Node, [{
+    key: 'syncAttributes',
+    value: function syncAttributes() {
+      this.depth = this.parent ? this.parent.depth + 1 : 0;
+      if (this.left) {
+        this.left.syncAttributes();
+        this.numLeftChildren = this.left.numLeftChildren + this.left.numRightChildren;
+        this.height = this.left.height + 1;
+      }
+      if (this.right) {
+        this.right.syncAttributes();
+        this.numRightChildren = this.right.numRightChildren + this.right.numRightChildren;
+        this.height = Math.max(this.height, this.right.height + 1);
+      }
+      //this.lastTouched = null;
+    }
+
+    //inserts a key and rebalances
+    //returns number of new children
+
+  }, {
     key: 'insert',
     value: function insert(key) {
       var rebalance = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
@@ -23691,13 +23720,13 @@ var BST = function (_React$Component) {
       this.runningSequence = true;
       (async function () {
         _this2.handleInsert(1);
-        await sleep(1500);
+        await sleep(1000);
         _this2.handleInsert(2);
-        await sleep(1500);
+        await sleep(1000);
         _this2.handleInsert(3);
-        await sleep(1500);
+        await sleep(1000);
         _this2.handleInsert(4);
-        await sleep(1500);
+        await sleep(1000);
         _this2.handleInsert(5);
         _this2.runningSequence = false;
       })();
@@ -23764,12 +23793,20 @@ var BST = function (_React$Component) {
             _react2.default.createElement(
               'h2',
               null,
-              'Standard View'
+              _react2.default.createElement(
+                'a',
+                { href: 'https://en.wikipedia.org/wiki/Binary_search_tree' },
+                'Standard View'
+              )
             ),
             _react2.default.createElement(
               'h2',
               null,
-              'Geometric View'
+              _react2.default.createElement(
+                'a',
+                { href: 'https://en.wikipedia.org/wiki/Geometry_of_binary_search_trees' },
+                'Geometric View'
+              )
             )
           )
         ),
@@ -23804,8 +23841,28 @@ var BST = function (_React$Component) {
           ),
           _react2.default.createElement(
             'div',
+            { className: 'tooltip' },
+            '?',
+            _react2.default.createElement(
+              'span',
+              { className: 'tooltiptext' },
+              'Note that selectively inserting into one structure will cause inconsistencies between them until 1) page refresh or 2) the "Generate Geometric/Standard View" button is pressed'
+            )
+          ),
+          _react2.default.createElement(
+            'div',
             null,
             'Standard View'
+          ),
+          _react2.default.createElement(
+            'div',
+            { className: 'tooltip' },
+            '?',
+            _react2.default.createElement(
+              'span',
+              { className: 'tooltiptext' },
+              'When enabled all touched points for a particular insert will also be inserted into the geometric view.'
+            )
           ),
           _react2.default.createElement(
             'label',
@@ -23818,6 +23875,16 @@ var BST = function (_React$Component) {
             'div',
             null,
             'Geometric View'
+          ),
+          _react2.default.createElement(
+            'div',
+            { className: 'tooltip' },
+            '?',
+            _react2.default.createElement(
+              'span',
+              { className: 'tooltiptext' },
+              'When enabled satisfier points from the standard view will appear in the geometric view.'
+            )
           ),
           _react2.default.createElement(
             'label',

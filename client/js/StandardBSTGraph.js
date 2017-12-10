@@ -85,6 +85,9 @@ class StandardBSTGraph extends React.Component {
       <div id="standardBSTGraph">
         <button onClick={this.makeGeometricBST}>Generate Geometric View</button>
         <span className="label">Rebalancing</span>
+        <div id="rebalancingTooltip" className="tooltip">?
+          <span className="tooltiptext">When enabled the tree rebalances into an AVL tree</span>
+        </div>
         <label htmlFor="rebalance" className="toggle">
           <input type="checkbox" value="standard" id="rebalance"
             onChange={this.selectRebalance}  checked={this.props.rebalance}/>
@@ -92,7 +95,7 @@ class StandardBSTGraph extends React.Component {
         </label>
         <div className="svgContainer">
           <div id="standardTooltip" className="tooltip">?
-            <span className="tooltiptext">after inserting elements: click and drag to pan
+            <span className="tooltiptext">after inserting elements: click and drag to pan,
               use the scroll wheel to zoom</span>
           </div>
           <svg id="standard" className="graph">

@@ -17,6 +17,23 @@ class Node {
     this.lastTouched = this; //used by d3 to select the last touched node
   }
 
+  //after manually constructing a BST from the geometric view use this function to
+  //make the attributes accurate
+  syncAttributes () {
+    this.depth = this.parent ? this.parent.depth + 1 : 0;
+    if(this.left) {
+      this.left.syncAttributes();
+      this.numLeftChildren = this.left.numLeftChildren + this.left.numRightChildren;
+      this.height = this.left.height + 1;
+    }
+    if(this.right) {
+      this.right.syncAttributes();
+      this.numRightChildren = this.right.numRightChildren + this.right.numRightChildren;
+      this.height = Math.max(this.height, this.right.height + 1);
+    }
+    //this.lastTouched = null;
+  }
+
   //inserts a key and rebalances
   //returns number of new children
   insert (key, rebalance = true, accessSequence = []) {

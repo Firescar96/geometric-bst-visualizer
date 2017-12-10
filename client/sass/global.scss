@@ -47,16 +47,6 @@ nav {
           padding: 0;
         }
       }
-
-      a {
-        color: #55beff;
-        padding: 15px;
-        text-decoration: none;
-
-        &.active {
-          border: solid 1px white;
-        }
-      }
     }
   }
 }
@@ -83,27 +73,45 @@ button {
 
 /* Tooltip container */
 .tooltip {
+  padding: 0 !important;
     position: relative;
+    margin-right: 10px;
     display: inline-block;
-    border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+    border-bottom: 1px dotted black;
+    border-radius: 50%;
+    border: solid 1px yellow;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 20px;
 }
 
 /* Tooltip text */
 .tooltip .tooltiptext {
     visibility: hidden;
-    width: 120px;
+    width: 10vw;
     background-color: black;
     color: #fff;
     text-align: center;
-    padding: 5px 0;
+    padding: 5px;
     border-radius: 6px;
 
     /* Position the tooltip text - see examples below! */
     position: absolute;
-    z-index: 1;
+    z-index: 100;
 }
 
 /* Show the tooltip text when you mouse over the tooltip container */
 .tooltip:hover .tooltiptext {
     visibility: visible;
+}
+
+a {
+  color: #55beff;
+  padding: 15px;
+  text-decoration: none;
+
+  &.active {
+    border: solid 1px white;
+  }
 }
