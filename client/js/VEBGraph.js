@@ -49,6 +49,7 @@ class vEBGraph extends React.Component {
       let n = this.state.root.bits;
       while(linkList.length > 0) {
         let curLinks = linkList.splice(0, Math.max(linkList.length/2, 1))
+        links.attr('stroke', 'white')
         links.data(curLinks, d => d.target.id)
          .attr('stroke', 'green')
         await sleep(500);
@@ -81,8 +82,8 @@ class vEBGraph extends React.Component {
           <span>{Number(this.state.newElement).toString(2)}</span>
         </form>
         <div>
-          <button onClick={this.doubleBits}>Double bits</button>
           <button onClick={this.halveBits}>Halve bits</button>
+          <button onClick={this.doubleBits}>Double bits</button>
         </div>
         <svg id="veb" className="graph">
           <g id="links"/>

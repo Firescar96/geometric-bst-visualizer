@@ -24095,6 +24095,7 @@ var vEBGraph = function (_React$Component) {
         var n = _this2.state.root.bits;
         while (linkList.length > 0) {
           var curLinks = linkList.splice(0, Math.max(linkList.length / 2, 1));
+          links.attr('stroke', 'white');
           links.data(curLinks, function (d) {
             return d.target.id;
           }).attr('stroke', 'green');
@@ -24148,13 +24149,13 @@ var vEBGraph = function (_React$Component) {
           null,
           _react2.default.createElement(
             'button',
-            { onClick: this.doubleBits },
-            'Double bits'
+            { onClick: this.halveBits },
+            'Halve bits'
           ),
           _react2.default.createElement(
             'button',
-            { onClick: this.halveBits },
-            'Halve bits'
+            { onClick: this.doubleBits },
+            'Double bits'
           )
         ),
         _react2.default.createElement(
