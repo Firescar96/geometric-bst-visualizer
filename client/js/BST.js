@@ -16,7 +16,6 @@ class BST extends React.Component {
     this.state = {
       newElement: '',
       standard: true,
-      geometric: true,
     };
     this.insertElement = this.insertElement.bind(this);
     this.changeElement = this.changeElement.bind(this);
@@ -31,9 +30,7 @@ class BST extends React.Component {
     if(this.state.standard) {
       store.dispatch({ type: INSERT_NODE, newElement });
     }
-    if(this.state.geometric) {
-      store.dispatch({ type: ADD_POINT, newElement });
-    }
+    store.dispatch({ type: ADD_POINT, newElement });
   }
   insertElement (event) {
     event.preventDefault();
@@ -121,26 +118,13 @@ class BST extends React.Component {
           <button id="sequence2" onClick={this.insertSequence2}>Sequence 2</button>
         </form>
         <div id="inserts">
-          <h4>Enable Inserts:</h4>
+          <p>Enable Standard View Inserts</p>
           <div className="tooltip">?
-            <span className="tooltiptext">Note that selectively inserting into one structure will cause inconsistencies between them until 1) page refresh or 2) the "Generate Geometric/Standard View" button is pressed</span>
-          </div>
-          <div>Standard View</div>
-          <div className="tooltip">?
-            <span className="tooltiptext">When enabled all touched points for a particular insert will also be inserted into the geometric view.</span>
+            <span className="tooltiptext">When enabled all touched points for a particular insert into the standard view will also be inserted into the geometric view.</span>
           </div>
           <label htmlFor="standardInsert" className="toggle">
             <input type="checkbox" value="standard" id="standardInsert"
               onChange={this.selectView}  checked={this.state.standard}/>
-            <span></span>
-          </label>
-          <div>Geometric View</div>
-          <div className="tooltip">?
-            <span className="tooltiptext">When enabled satisfier points from the standard view will appear in the geometric view.</span>
-          </div>
-          <label htmlFor="geometricInsert" className="toggle">
-            <input type="checkbox" value="geometric" id="geometricInsert"
-              onChange={this.selectView}  checked={this.state.geometric}/>
             <span></span>
           </label>
         </div>

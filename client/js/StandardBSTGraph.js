@@ -119,12 +119,9 @@ class StandardBSTGraph extends React.Component {
 
   componentDidUpdate () {
     if(this.props.root === null)return;
-    if(this.props.geometricEnabled) {
-      //if the last insert generated satisfier points those need to be sent to the geometricBST
-      this.props.satisfierPoints.forEach(point => {
-        store.dispatch({type: ADD_POINT, point});
-      });
-    }
+    this.props.satisfierPoints.forEach(point => {
+      store.dispatch({type: ADD_POINT, point});
+    });
     let standard = d3.select('#standard');
 
     let linkChildren = (d) => {
@@ -206,9 +203,7 @@ class StandardBSTGraph extends React.Component {
       .on('click', (d1) => {
         d3.selectAll('circle.node')
           .attr('stroke', d2 => d1.key == d2.key ? 'green' : null);
-        if(this.props.geometricEnabled) {
-          store.dispatch({ type: ADD_POINT, newElement: d1.key });
-        }
+        store.dispatch({ type: ADD_POINT, newElement: d1.key });
       });
 
     node.exit().remove();

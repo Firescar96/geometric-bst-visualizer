@@ -95,7 +95,7 @@ class GemetricBST {
       //this checks if there are satisfying points along the top segment of the
       //satisfiability box
       let isTopSatisfied;
-      if(lessThanComparator(unsatisfiedPoint.key, levelValues.key)) {
+      if(lessThanComparator(unsatisfiedPoint.key, levelPoint.key)) {
         isTopSatisfied = levelValues.filter(x => x < rangeMax && x >= rangeMin).length > 0;
       }else {
         isTopSatisfied = levelValues.filter(x => x <= rangeMax && x > rangeMin).length > 0;

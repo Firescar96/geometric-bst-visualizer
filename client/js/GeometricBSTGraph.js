@@ -85,6 +85,7 @@ class GeometricBSTGraph extends React.Component {
 
         let touchedIndex = touchedPoints.indexOf(parentNode.key);
         let isLeft = lessThanComparator(insertedPoint.key, parentNode.key);
+        console.log(touchedPoints, touchedIndex);
         if(touchedIndex == -1) {
           if(isLeft) parentNode.rotateRight();
           else parentNode.rotateLeft();
