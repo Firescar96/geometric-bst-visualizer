@@ -52,7 +52,7 @@ class vEBGraph extends React.Component {
         links.attr('stroke', 'white')
         links.data(curLinks, d => d.target.id)
          .attr('stroke', 'green')
-        await sleep(500);
+        await sleep(800);
       }
 
       this.setState({newElement: ''});
@@ -76,7 +76,10 @@ class vEBGraph extends React.Component {
       <main id="veb">
         <h1 id="title">vEB Geometric Tree View</h1>
         <form onSubmit={this.insertElement}>
-          Insert an element
+          <p>Insert an element</p>
+          <div className="tooltip">?
+            <span className="tooltiptext">Finding the position of an element into the tree view is equivalent to a binary search on the height of the tree. The visualization below captures this.</span>
+          </div>
           <input value={this.state.newElement} onChange={this.changeElement}></input>
           <button type="submit">Insert</button>
           <span>{Number(this.state.newElement).toString(2)}</span>

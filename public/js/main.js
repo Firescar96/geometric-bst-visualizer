@@ -13112,6 +13112,7 @@ var GeometricBSTGraph = function (_React$Component) {
 
           var touchedIndex = touchedPoints.indexOf(parentNode.key);
           var isLeft = (0, _main.lessThanComparator)(insertedPoint.key, parentNode.key);
+          console.log(touchedPoints, touchedIndex);
           if (touchedIndex == -1) {
             if (isLeft) parentNode.rotateRight();else parentNode.rotateLeft();
             continue;
@@ -13553,12 +13554,9 @@ var StandardBSTGraph = function (_React$Component) {
       var _this2 = this;
 
       if (this.props.root === null) return;
-      if (this.props.geometricEnabled) {
-        //if the last insert generated satisfier points those need to be sent to the geometricBST
-        this.props.satisfierPoints.forEach(function (point) {
-          _main.store.dispatch({ type: _constants.ADD_POINT, point: point });
-        });
-      }
+      this.props.satisfierPoints.forEach(function (point) {
+        _main.store.dispatch({ type: _constants.ADD_POINT, point: point });
+      });
       var standard = d3.select('#standard');
 
       var linkChildren = function linkChildren(d) {
@@ -13620,9 +13618,7 @@ var StandardBSTGraph = function (_React$Component) {
         d3.selectAll('circle.node').attr('stroke', function (d2) {
           return d1.key == d2.key ? 'green' : null;
         });
-        if (_this2.props.geometricEnabled) {
-          _main.store.dispatch({ type: _constants.ADD_POINT, newElement: d1.key });
-        }
+        _main.store.dispatch({ type: _constants.ADD_POINT, newElement: d1.key });
       });
 
       node.exit().remove();
@@ -13842,7 +13838,7 @@ var GemetricBST = function () {
         //this checks if there are satisfying points along the top segment of the
         //satisfiability box
         var isTopSatisfied = void 0;
-        if ((0, _main.lessThanComparator)(unsatisfiedPoint.key, levelValues.key)) {
+        if ((0, _main.lessThanComparator)(unsatisfiedPoint.key, levelPoint.key)) {
           isTopSatisfied = levelValues.filter(function (x) {
             return x < rangeMax && x >= rangeMin;
           }).length > 0;
@@ -23672,8 +23668,7 @@ var BST = function (_React$Component) {
 
     _this.state = {
       newElement: '',
-      standard: true,
-      geometric: true
+      standard: true
     };
     _this.insertElement = _this.insertElement.bind(_this);
     _this.changeElement = _this.changeElement.bind(_this);
@@ -23692,9 +23687,7 @@ var BST = function (_React$Component) {
       if (this.state.standard) {
         _main.store.dispatch({ type: _constants.INSERT_NODE, newElement: newElement });
       }
-      if (this.state.geometric) {
-        _main.store.dispatch({ type: _constants.ADD_POINT, newElement: newElement });
-      }
+      _main.store.dispatch({ type: _constants.ADD_POINT, newElement: newElement });
     }
   }, {
     key: 'insertElement',
@@ -23840,9 +23833,9 @@ var BST = function (_React$Component) {
           'div',
           { id: 'inserts' },
           _react2.default.createElement(
-            'h4',
+            'p',
             null,
-            'Enable Inserts:'
+            'Enable Standard View Inserts'
           ),
           _react2.default.createElement(
             'div',
@@ -23851,22 +23844,7 @@ var BST = function (_React$Component) {
             _react2.default.createElement(
               'span',
               { className: 'tooltiptext' },
-              'Note that selectively inserting into one structure will cause inconsistencies between them until 1) page refresh or 2) the "Generate Geometric/Standard View" button is pressed'
-            )
-          ),
-          _react2.default.createElement(
-            'div',
-            null,
-            'Standard View'
-          ),
-          _react2.default.createElement(
-            'div',
-            { className: 'tooltip' },
-            '?',
-            _react2.default.createElement(
-              'span',
-              { className: 'tooltiptext' },
-              'When enabled all touched points for a particular insert will also be inserted into the geometric view.'
+              'When enabled all touched points for a particular insert into the standard view will also be inserted into the geometric view.'
             )
           ),
           _react2.default.createElement(
@@ -23874,28 +23852,6 @@ var BST = function (_React$Component) {
             { htmlFor: 'standardInsert', className: 'toggle' },
             _react2.default.createElement('input', { type: 'checkbox', value: 'standard', id: 'standardInsert',
               onChange: this.selectView, checked: this.state.standard }),
-            _react2.default.createElement('span', null)
-          ),
-          _react2.default.createElement(
-            'div',
-            null,
-            'Geometric View'
-          ),
-          _react2.default.createElement(
-            'div',
-            { className: 'tooltip' },
-            '?',
-            _react2.default.createElement(
-              'span',
-              { className: 'tooltiptext' },
-              'When enabled satisfier points from the standard view will appear in the geometric view.'
-            )
-          ),
-          _react2.default.createElement(
-            'label',
-            { htmlFor: 'geometricInsert', className: 'toggle' },
-            _react2.default.createElement('input', { type: 'checkbox', value: 'geometric', id: 'geometricInsert',
-              onChange: this.selectView, checked: this.state.geometric }),
             _react2.default.createElement('span', null)
           )
         ),
@@ -24104,7 +24060,7 @@ var vEBGraph = function (_React$Component) {
           links.data(curLinks, function (d) {
             return d.target.id;
           }).attr('stroke', 'green');
-          await sleep(500);
+          await sleep(800);
         }
 
         _this2.setState({ newElement: '' });
@@ -24136,7 +24092,21 @@ var vEBGraph = function (_React$Component) {
         _react2.default.createElement(
           'form',
           { onSubmit: this.insertElement },
-          'Insert an element',
+          _react2.default.createElement(
+            'p',
+            null,
+            'Insert an element'
+          ),
+          _react2.default.createElement(
+            'div',
+            { className: 'tooltip' },
+            '?',
+            _react2.default.createElement(
+              'span',
+              { className: 'tooltiptext' },
+              'Finding the position of an element into the tree view is equivalent to a binary search on the height of the tree. The visualization below captures this.'
+            )
+          ),
           _react2.default.createElement('input', { value: this.state.newElement, onChange: this.changeElement }),
           _react2.default.createElement(
             'button',
