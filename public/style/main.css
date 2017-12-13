@@ -107,25 +107,27 @@ main#bst {
         background: #333;
         left: 6px;
         top: 6px; }
-main#veb {
+main#xfast {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column; }
-  main#veb svg {
+  main#xfast svg {
     width: 100%;
     height: 100%; }
-  main#veb form {
+  main#xfast form {
     display: flex;
     margin: 10px 0; }
-    main#veb form p {
+    main#xfast form p {
       margin-right: 10px; }
-    main#veb form > span {
+    main#xfast form > span {
       margin-left: 15px;
       font-size: 20px;
       align-self: flex-end; }
-    main#veb form button {
+    main#xfast form button {
       margin: auto 0; }
+  main#xfast #bittricks span {
+    padding: 0 10px; }
 html, body, #root, #root > div {
   width: auto;
   height: 100%;

@@ -1,16 +1,27 @@
 class Node {
-  constructor (bitvector, id) {
+  constructor (bitvector, id, prefix) {
+    this.prefix = prefix || 0;
     this.bitvector = bitvector;
+    console.log(this.bitvector);
     this.id = id || '0';
+    this.left = this.right = null;
+    this.leftDescendant = this.rightDescendant = null;
+
     if(bitvector.length == 1) {
-      this.value = bitvector[0];
-      this.left = this.right = null;
+      this.isLeaf = true;
     }else {
-      this.left = new Node(bitvector.slice(0, bitvector.length / 2), this.id + '0');
-      this.right = new Node(bitvector.slice(bitvector.length / 2), this.id + '1');
-      this.value = this.left.value || this.right.value;
-      this.left.parent = this;
-      this.right.parent = this;
+      let leftVector = bitvector.slice(0, bitvector.length / 2);
+      let rightVector = bitvector.slice(bitvector.length / 2);
+      if(leftVector.includes(1)) {
+        this.left = new Node(leftVector, this.id + '0', this.prefix);
+        this.left.parent = this;
+      }
+      if(rightVector.includes(1)) {
+        this.right = new Node(rightVector, this.id + '1', this.prefix + this.bitvector.length / 2);
+        this.right.parent = this;
+      }
+      if(!this.left && this.right)this.leftDescendant = this.right.getLeftmostChild();
+      if(!this.right && this.left)this.rightDescendant = this.left.getRightmostChild();
     }
   }
   traversal () {
@@ -39,6 +50,22 @@ class Node {
       curElem = curElem.parent;
     }
     return ancestors;
+
+  }
+
+  getLeftmostChild () {
+    if(this.bitvector.length == 1)return this;
+    if(this.left)return this.left.getLeftmostChild();
+    return this.leftDescendant;
+  }
+
+  getRightmostChild () {
+    if(this.bitvector.length == 1)return this;
+    if(this.right)return this.right.getRightmostChild();
+    return this.rightDescendant;
+  }
+
+  getValue () {
 
   }
 }

@@ -3109,9 +3109,9 @@ var _BST = __webpack_require__(294);
 
 var _BST2 = _interopRequireDefault(_BST);
 
-var _VEBGraph = __webpack_require__(296);
+var _XFastGraph = __webpack_require__(296);
 
-var _VEBGraph2 = _interopRequireDefault(_VEBGraph);
+var _XFastGraph2 = _interopRequireDefault(_XFastGraph);
 
 var _Navbar = __webpack_require__(295);
 
@@ -3160,7 +3160,7 @@ exports.lessThanComparator = lessThanComparator;
       null,
       _react2.default.createElement(_Navbar2.default, null),
       _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: _BST2.default }),
-      _react2.default.createElement(_reactRouterDom.Route, { path: '/veb', component: _VEBGraph2.default })
+      _react2.default.createElement(_reactRouterDom.Route, { path: '/veb', component: _XFastGraph2.default })
     )
   )
 ), document.getElementById('root'));
@@ -13112,7 +13112,6 @@ var GeometricBSTGraph = function (_React$Component) {
 
           var touchedIndex = touchedPoints.indexOf(parentNode.key);
           var isLeft = (0, _main.lessThanComparator)(insertedPoint.key, parentNode.key);
-          console.log(touchedPoints, touchedIndex);
           if (touchedIndex == -1) {
             if (isLeft) parentNode.rotateRight();else parentNode.rotateLeft();
             continue;
@@ -23928,7 +23927,7 @@ var Navbar = function (_React$Component) {
             _react2.default.createElement(
               "a",
               { href: "#/veb" },
-              "van Emde Boas"
+              "X-fast Tree"
             )
           ),
           _react2.default.createElement(
@@ -24006,13 +24005,13 @@ function sleep(ms) {
   });
 }
 
-var vEBGraph = function (_React$Component) {
-  _inherits(vEBGraph, _React$Component);
+var XFastGraph = function (_React$Component) {
+  _inherits(XFastGraph, _React$Component);
 
-  function vEBGraph() {
-    _classCallCheck(this, vEBGraph);
+  function XFastGraph() {
+    _classCallCheck(this, XFastGraph);
 
-    var _this = _possibleConstructorReturn(this, (vEBGraph.__proto__ || Object.getPrototypeOf(vEBGraph)).call(this));
+    var _this = _possibleConstructorReturn(this, (XFastGraph.__proto__ || Object.getPrototypeOf(XFastGraph)).call(this));
 
     _this.state = {
       simulation: d3.forceSimulation(),
@@ -24027,11 +24026,10 @@ var vEBGraph = function (_React$Component) {
     return _this;
   }
 
-  _createClass(vEBGraph, [{
+  _createClass(XFastGraph, [{
     key: 'changeElement',
     value: function changeElement(event) {
       var value = event.target.value;
-      if (parseInt(value) == NaN) return;
       if (value >= Math.pow(2, this.state.root.bits)) return;
       if (value < 0) return;
       this.setState({ newElement: value });
@@ -24039,9 +24037,8 @@ var vEBGraph = function (_React$Component) {
   }, {
     key: 'insertElement',
     value: function insertElement(event) {
-      var _this2 = this;
-
       event.preventDefault();
+      if (isNaN(parseInt(this.state.newElement))) return;
       var newElement = this.state.newElement;
       this.state.root.insert(newElement);
 
@@ -24051,20 +24048,7 @@ var vEBGraph = function (_React$Component) {
       var treeView = new _TreeView2.default(bitvector);
       var linkList = treeView.getPath(newElement).reverse();
 
-      (async function () {
-        var links = veb.select('#links').selectAll('line');
-        var n = _this2.state.root.bits;
-        while (linkList.length > 0) {
-          var curLinks = linkList.splice(0, Math.max(linkList.length / 2, 1));
-          links.attr('stroke', 'white');
-          links.data(curLinks, function (d) {
-            return d.target.id;
-          }).attr('stroke', 'green');
-          await sleep(800);
-        }
-
-        _this2.setState({ newElement: '' });
-      })();
+      this.setState({ newElement: '' });
     }
   }, {
     key: 'doubleBits',
@@ -24083,11 +24067,15 @@ var vEBGraph = function (_React$Component) {
     value: function render() {
       return _react2.default.createElement(
         'main',
-        { id: 'veb' },
+        { id: 'xfast' },
         _react2.default.createElement(
           'h1',
           { id: 'title' },
-          'vEB Geometric Tree View'
+          _react2.default.createElement(
+            'a',
+            { href: 'https://en.wikipedia.org/wiki/X-fast_trie' },
+            'X-Fast (vEB) Tree View'
+          )
         ),
         _react2.default.createElement(
           'form',
@@ -24104,7 +24092,7 @@ var vEBGraph = function (_React$Component) {
             _react2.default.createElement(
               'span',
               { className: 'tooltiptext' },
-              'Finding the position of an element into the tree view is equivalent to a binary search on the height of the tree. The visualization below captures this.'
+              'An X-fast tree improves upon a vEB tree by not storing elements that don\'t exist.'
             )
           ),
           _react2.default.createElement('input', { value: this.state.newElement, onChange: this.changeElement }),
@@ -24121,7 +24109,7 @@ var vEBGraph = function (_React$Component) {
         ),
         _react2.default.createElement(
           'div',
-          null,
+          { id: 'bittricks' },
           _react2.default.createElement(
             'button',
             { onClick: this.halveBits },
@@ -24131,6 +24119,20 @@ var vEBGraph = function (_React$Component) {
             'button',
             { onClick: this.doubleBits },
             'Double bits'
+          ),
+          _react2.default.createElement(
+            'span',
+            null,
+            ' Current Size: ',
+            this.state.root.bits,
+            ' bits '
+          ),
+          _react2.default.createElement(
+            'span',
+            null,
+            ' Max Value: ',
+            Math.pow(2, this.state.root.bits) - 1,
+            ' '
           )
         ),
         _react2.default.createElement(
@@ -24151,33 +24153,11 @@ var vEBGraph = function (_React$Component) {
         d3.select('#values').attr('transform', d3.event.transform);
       });
       var veb = d3.select('svg#veb').call(zoom);
-      this.initializeD3Graph();
+      this.componentDidUpdate();
     }
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
-      var veb = d3.select('svg#veb');
-      //console.log(this.state.root);
-      var bitvector = this.state.root.bitvector();
-      var treeView = new _TreeView2.default(bitvector);
-      var bitNodes = treeView.traversal();
-      veb.selectAll('text.node').data(bitNodes).text(function (d) {
-        return d.value;
-      });
-
-      veb.selectAll('line').attr('stroke', '#ddd');
-
-      var leafNodes = bitNodes.filter(function (d) {
-        return d.left == null && d.right == null;
-      });
-      veb.selectAll('text.value').data(leafNodes).text(function (d, i) {
-        return d.value ? i : null;
-      });
-    }
-  }, {
-    key: 'initializeD3Graph',
-    value: function initializeD3Graph() {
-      window.d3 = d3;
       var veb = d3.select('svg#veb');
 
       var height = veb.node().getBoundingClientRect().height;
@@ -24208,12 +24188,12 @@ var vEBGraph = function (_React$Component) {
         return d.x - 1;
       }).attr('y', function (d) {
         return d.y - 1;
-      }).attr('width', ELEMENT_WIDTH + 1).attr('height', ELEMENT_HEIGHT + 2);
+      }).attr('width', ELEMENT_WIDTH + 2).attr('height', ELEMENT_HEIGHT + 2);
 
       nodeG.append('rect').attr('class', 'node').attr('x', 1).attr('y', 1).attr('width', ELEMENT_WIDTH).attr('height', ELEMENT_HEIGHT).attr('fill', 'black').attr('stroke', 'white');
 
-      nodeG.append('text').attr('class', 'node').attr('fill', 'white').attr('x', '50%').attr('y', '60%').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle').text(function (d) {
-        return d.value;
+      nodeG.append('text').attr('class', 'node').attr('fill', 'white').attr('x', '50%').attr('y', '60%').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle').text(function (d, i) {
+        return 1;
       });
 
       nodes.exit().remove();
@@ -24221,35 +24201,56 @@ var vEBGraph = function (_React$Component) {
       function linkChildren(parent) {
         var linkList = [];
         if (parent.left !== null) {
-          linkList.push({ source: parent, target: parent.left });
+          linkList.push({ source: parent, target: parent.left, isChildPointer: true });
           linkList.push.apply(linkList, _toConsumableArray(linkChildren(parent.left)));
         }
         if (parent.right !== null) {
-          linkList.push({ source: parent, target: parent.right });
+          linkList.push({ source: parent, target: parent.right, isChildPointer: true });
           linkList.push.apply(linkList, _toConsumableArray(linkChildren(parent.right)));
+        }
+        if (parent.leftDescendant !== null) {
+          linkList.push({ source: parent, target: parent.leftDescendant, isChildPointer: false });
+        }
+        if (parent.rightDescendant !== null) {
+          linkList.push({ source: parent, target: parent.rightDescendant, isChildPointer: false });
         }
         return linkList;
       }
 
       var linkList = linkChildren(treeView);
-      veb.selectAll('line.link').remove();
-      var links = veb.select('#links').selectAll('line.link').data(linkList, function (d) {
+      veb.selectAll('path.link').remove();
+      var links = veb.select('#links').selectAll('path.link').data(linkList, function (d) {
         return d.target.id;
       });
 
-      links.enter().append('line').attr('class', 'link').attr('stroke', '#ddd').attr('stroke-width', 5).attr('x1', function (d) {
-        return d.source.x + ELEMENT_WIDTH / 2;
-      }).attr('y1', function (d) {
-        return d.source.y + ELEMENT_WIDTH / 2;
-      }).attr('x2', function (d) {
-        return d.target.x + ELEMENT_WIDTH / 2;
-      }).attr('y2', function (d) {
-        return d.target.y + ELEMENT_WIDTH / 2;
+      function drawPath(context, radius) {
+        context.moveTo(radius, 0);
+        context.arc(0, 0, radius, 0, 2 * Math.PI);
+      }
+
+      links.enter().append('path').attr('class', 'link').attr('stroke', function (d) {
+        return d.isChildPointer ? 'white' : '#55beff';
+      }).attr('stroke-width', 5).attr('fill', 'none').attr('opacity', function (d) {
+        return d.isChildPointer ? '1' : '.2';
+      }).attr('d', function (d) {
+        var x0 = d.source.x + ELEMENT_WIDTH / 2;
+        var x1 = d.target.x + ELEMENT_WIDTH / 2;
+        var y0 = d.source.y + ELEMENT_HEIGHT / 2;
+        var y1 = d.target.y + ELEMENT_HEIGHT / 2;
+        var context = d3.path();
+        context.moveTo(x0, y0);
+        if (d.isChildPointer) {
+          context.lineTo(x1, y1);
+          return context.toString();
+        }
+        context.bezierCurveTo(x0, y0, x0 + (x0 - x1) * 1.1, y1 * 1.1, x1, y1);
+        //console.log(context);
+        return context.toString();
       });
       links.exit().remove();
 
       var leafNodes = bitNodes.filter(function (d) {
-        return d.left == null && d.right == null;
+        return d.isLeaf;
       });
       veb.selectAll('svg.value').remove();
       var values = veb.select('#values').selectAll('svg.value').data(leafNodes);
@@ -24262,16 +24263,18 @@ var vEBGraph = function (_React$Component) {
 
       valuesG.append('line').attr('class', 'value').attr('x1', 1).attr('y1', ELEMENT_HEIGHT).attr('x2', ELEMENT_WIDTH).attr('y2', ELEMENT_HEIGHT).attr('fill', 'black').attr('stroke', 'white');
 
-      valuesG.append('text').attr('class', 'value').attr('fill', 'white').attr('x', '50%').attr('y', '60%').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle');
+      valuesG.append('text').attr('class', 'value').attr('fill', 'white').attr('x', '50%').attr('y', '60%').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle').text(function (d, i) {
+        return d.prefix;
+      });
 
       values.exit().remove();
     }
   }]);
 
-  return vEBGraph;
+  return XFastGraph;
 }(_react2.default.Component);
 
-exports.default = vEBGraph;
+exports.default = XFastGraph;
 
 /***/ }),
 /* 297 */
@@ -24485,20 +24488,31 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Node = function () {
-  function Node(bitvector, id) {
+  function Node(bitvector, id, prefix) {
     _classCallCheck(this, Node);
 
+    this.prefix = prefix || 0;
     this.bitvector = bitvector;
+    console.log(this.bitvector);
     this.id = id || '0';
+    this.left = this.right = null;
+    this.leftDescendant = this.rightDescendant = null;
+
     if (bitvector.length == 1) {
-      this.value = bitvector[0];
-      this.left = this.right = null;
+      this.isLeaf = true;
     } else {
-      this.left = new Node(bitvector.slice(0, bitvector.length / 2), this.id + '0');
-      this.right = new Node(bitvector.slice(bitvector.length / 2), this.id + '1');
-      this.value = this.left.value || this.right.value;
-      this.left.parent = this;
-      this.right.parent = this;
+      var leftVector = bitvector.slice(0, bitvector.length / 2);
+      var rightVector = bitvector.slice(bitvector.length / 2);
+      if (leftVector.includes(1)) {
+        this.left = new Node(leftVector, this.id + '0', this.prefix);
+        this.left.parent = this;
+      }
+      if (rightVector.includes(1)) {
+        this.right = new Node(rightVector, this.id + '1', this.prefix + this.bitvector.length / 2);
+        this.right.parent = this;
+      }
+      if (!this.left && this.right) this.leftDescendant = this.right.getLeftmostChild();
+      if (!this.right && this.left) this.rightDescendant = this.left.getRightmostChild();
     }
   }
 
@@ -24532,6 +24546,23 @@ var Node = function () {
       }
       return ancestors;
     }
+  }, {
+    key: 'getLeftmostChild',
+    value: function getLeftmostChild() {
+      if (this.bitvector.length == 1) return this;
+      if (this.left) return this.left.getLeftmostChild();
+      return this.leftDescendant;
+    }
+  }, {
+    key: 'getRightmostChild',
+    value: function getRightmostChild() {
+      if (this.bitvector.length == 1) return this;
+      if (this.right) return this.right.getRightmostChild();
+      return this.rightDescendant;
+    }
+  }, {
+    key: 'getValue',
+    value: function getValue() {}
   }]);
 
   return Node;

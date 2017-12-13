@@ -1,5 +1,5 @@
 import BST from './BST.js';
-import VEBGraph from './VEBGraph';
+import XFastGraph from './XFastGraph';
 import Navbar from './Navbar';
 import React from 'react';
 import { render } from 'react-dom';
@@ -27,7 +27,7 @@ render((
       <div>
         <Navbar />
         <Route exact path="/" component={BST}/>
-        <Route path="/veb" component={VEBGraph}/>
+        <Route path="/veb" component={XFastGraph}/>
       </div>
     </HashRouter>
   </Provider>

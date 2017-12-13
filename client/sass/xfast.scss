@@ -1,5 +1,5 @@
 //veb.scss
-main#veb {
+main#xfast {
   width: 100%;
   height: 100%;
   display: flex;
@@ -26,6 +26,12 @@ main#veb {
 
     button {
       margin: auto 0;
+    }
+  }
+
+  #bittricks {
+    span {
+      padding: 0 10px;
     }
   }
 }
