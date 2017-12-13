@@ -4,13 +4,13 @@ import VEBNode from './VEBNode';
 import TreeView from './TreeView';
 const ELEMENT_WIDTH = 30;
 const ELEMENT_HEIGHT = 20;
-require('../sass/veb.scss');
+require('../sass/xfast.scss');
 
 function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-class vEBGraph extends React.Component {
+class XFastGraph extends React.Component {
   constructor () {
     super();
     this.state = {
@@ -27,14 +27,14 @@ class vEBGraph extends React.Component {
 
   changeElement (event) {
     let value = event.target.value;
-    if(parseInt(value) == NaN) return;
-    if(value >= Math.pow(2, this.state.root.bits)) return;
-    if(value < 0) return;
+    if(value >= Math.pow(2, this.state.root.bits))return;
+    if(value < 0)return;
     this.setState({newElement: value});
   }
 
   insertElement (event) {
     event.preventDefault();
+    if(isNaN(parseInt(this.state.newElement)))return;
     let newElement = this.state.newElement;
     this.state.root.insert(newElement);
 
@@ -44,49 +44,39 @@ class vEBGraph extends React.Component {
     let treeView = new TreeView(bitvector);
     let linkList = treeView.getPath(newElement).reverse();
 
-    (async () => {
-      let links = veb.select('#links').selectAll('line');
-      let n = this.state.root.bits;
-      while(linkList.length > 0) {
-        let curLinks = linkList.splice(0, Math.max(linkList.length/2, 1))
-        links.attr('stroke', 'white')
-        links.data(curLinks, d => d.target.id)
-         .attr('stroke', 'green')
-        await sleep(800);
-      }
-
-      this.setState({newElement: ''});
-    })()
+    this.setState({newElement: ''});
   }
 
   doubleBits () {
-    if(this.state.root.bits == 8) return;
-    this.setState({root: new VEBNode(this.state.root.bits*2)},
-      this.initializeD3Graph)
+    if(this.state.root.bits == 8)return;
+    this.setState({root: new VEBNode(this.state.root.bits * 2)},
+      this.initializeD3Graph);
   }
 
   halveBits () {
-    if(this.state.root.bits == 2) return;
-    this.setState({root: new VEBNode(this.state.root.bits/2)},
-      this.initializeD3Graph)
+    if(this.state.root.bits == 2)return;
+    this.setState({root: new VEBNode(this.state.root.bits / 2)},
+      this.initializeD3Graph);
   }
 
   render () {
     return (
-      <main id="veb">
-        <h1 id="title">vEB Geometric Tree View</h1>
+      <main id="xfast">
+        <h1 id="title"><a href="https://en.wikipedia.org/wiki/X-fast_trie">X-Fast (vEB) Tree View</a></h1>
         <form onSubmit={this.insertElement}>
           <p>Insert an element</p>
           <div className="tooltip">?
-            <span className="tooltiptext">Finding the position of an element into the tree view is equivalent to a binary search on the height of the tree. The visualization below captures this.</span>
+            <span className="tooltiptext">An X-fast tree improves upon a vEB tree by not storing elements that don't exist.</span>
           </div>
           <input value={this.state.newElement} onChange={this.changeElement}></input>
           <button type="submit">Insert</button>
           <span>{Number(this.state.newElement).toString(2)}</span>
         </form>
-        <div>
+        <div id="bittricks">
           <button onClick={this.halveBits}>Halve bits</button>
           <button onClick={this.doubleBits}>Double bits</button>
+          <span> Current Size: {this.state.root.bits} bits </span>
+          <span> Max Value: {Math.pow(2, this.state.root.bits) - 1} </span>
         </div>
         <svg id="veb" className="graph">
           <g id="links"/>
@@ -106,28 +96,10 @@ class vEBGraph extends React.Component {
       });
     let veb = d3.select('svg#veb')
       .call(zoom);
-    this.initializeD3Graph();
+    this.componentDidUpdate();
   }
 
   componentDidUpdate () {
-    let veb = d3.select('svg#veb');
-    //console.log(this.state.root);
-    let bitvector = this.state.root.bitvector();
-    let treeView = new TreeView(bitvector);
-    let bitNodes = treeView.traversal();
-    veb.selectAll('text.node').data(bitNodes)
-      .text((d) => d.value);
-
-    veb.selectAll('line')
-      .attr('stroke', '#ddd')
-
-    let leafNodes = bitNodes.filter(d => d.left == null && d.right == null)
-    veb.selectAll('text.value').data(leafNodes)
-      .text((d, i) => d.value ? i : null);
-  }
-
-  initializeD3Graph () {
-    window.d3 = d3;
     let veb = d3.select('svg#veb');
 
     let height = veb.node().getBoundingClientRect().height;
@@ -154,13 +126,13 @@ class vEBGraph extends React.Component {
 
     veb.selectAll('svg.node').remove();
     let nodes = veb.select('#nodes').selectAll('svg.node')
-      .data(bitNodes)
+      .data(bitNodes);
     let nodeG = nodes.enter()
       .append('svg')
       .attr('class', 'node')
       .attr('x', d => d.x - 1)
       .attr('y', d => d.y - 1)
-      .attr('width', ELEMENT_WIDTH + 1)
+      .attr('width', ELEMENT_WIDTH + 2)
       .attr('height', ELEMENT_HEIGHT + 2);
 
     nodeG.append('rect')
@@ -179,47 +151,71 @@ class vEBGraph extends React.Component {
       .attr('y', '60%')
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
-      .text((d) => d.value);
+      .text((d, i) => 1);
 
     nodes.exit().remove();
 
     function linkChildren (parent) {
       let linkList = [];
       if(parent.left !== null) {
-        linkList.push({source: parent, target: parent.left});
+        linkList.push({source: parent, target: parent.left, isChildPointer: true});
         linkList.push(...linkChildren(parent.left));
       }
       if(parent.right !== null) {
-        linkList.push({source: parent, target: parent.right});
+        linkList.push({source: parent, target: parent.right, isChildPointer: true});
         linkList.push(...linkChildren(parent.right));
+      }
+      if(parent.leftDescendant !== null) {
+        linkList.push({source: parent, target: parent.leftDescendant, isChildPointer: false});
+      }
+      if(parent.rightDescendant !== null) {
+        linkList.push({source: parent, target: parent.rightDescendant, isChildPointer: false});
       }
       return linkList;
     }
 
     let linkList = linkChildren(treeView);
-    veb.selectAll('line.link').remove();
-    let links = veb.select('#links').selectAll('line.link').data(linkList, d => d.target.id);
+    veb.selectAll('path.link').remove();
+    let links = veb.select('#links').selectAll('path.link').data(linkList, d => d.target.id);
+
+    function drawPath (context, radius) {
+      context.moveTo(radius, 0);
+      context.arc(0, 0, radius, 0, 2 * Math.PI);
+    }
 
     links
-      .enter().append('line')
+      .enter().append('path')
       .attr('class', 'link')
-      .attr('stroke', '#ddd')
+      .attr('stroke', d => d.isChildPointer ? 'white' : '#55beff')
       .attr('stroke-width', 5)
-      .attr('x1', d => d.source.x + ELEMENT_WIDTH / 2)
-      .attr('y1', d => d.source.y + ELEMENT_WIDTH / 2)
-      .attr('x2', d => d.target.x + ELEMENT_WIDTH / 2)
-      .attr('y2', d => d.target.y + ELEMENT_WIDTH / 2);
+      .attr('fill', 'none')
+      .attr('opacity', d => d.isChildPointer ? '1' : '.2')
+      .attr('d', d => {
+        let x0 = d.source.x + ELEMENT_WIDTH / 2;
+        let x1 = d.target.x + ELEMENT_WIDTH / 2;
+        let y0 = d.source.y + ELEMENT_HEIGHT / 2;
+        let y1 = d.target.y + ELEMENT_HEIGHT / 2;
+        var context = d3.path();
+        context.moveTo(x0, y0);
+        if(d.isChildPointer) {
+          context.lineTo(x1, y1);
+          return context.toString();
+        }
+        context.bezierCurveTo(x0, y0, x0 + (x0 - x1) * 1.1, y1 * 1.1, x1, y1);
+        //console.log(context);
+        return context.toString();
+      });
     links.exit().remove();
 
-    let leafNodes = bitNodes.filter(d => d.left == null && d.right == null)
-    veb.selectAll('svg.value').remove()
-    let values = veb.select('#values').selectAll('svg.value').data(leafNodes)
+    let leafNodes = bitNodes.filter(d => d.isLeaf);
+    veb.selectAll('svg.value').remove();
+    let values = veb.select('#values').selectAll('svg.value').data(leafNodes);
 
     let valuesG = values.enter()
       .append('svg')
       .attr('class', 'value')
       .attr('x', d => d.x - 1)
-      .attr('y', d => d.y - 1 + ELEMENT_HEIGHT*2)
+      .attr('y', d => d.y - 1 + ELEMENT_HEIGHT * 2)
       .attr('width', ELEMENT_WIDTH + 1)
       .attr('height', ELEMENT_HEIGHT + 1);
 
@@ -239,9 +235,10 @@ class vEBGraph extends React.Component {
       .attr('y', '60%')
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
+      .text((d, i) => d.prefix);
 
     values.exit().remove();
   }
 }
 
-export default vEBGraph;
+export default XFastGraph;
