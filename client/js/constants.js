@@ -1,3 +1,4 @@
+//constants for the rest of the app
 const ADD_POINT = 'ADD POINT';
 const INSERT_NODE = 'INSERT NODE';
 const SET_ROOT = 'SET_ROOT';

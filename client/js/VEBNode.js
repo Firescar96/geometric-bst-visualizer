@@ -1,3 +1,4 @@
+//An implementation of a vEB tree
 class Node {
   constructor (bits) {
     //vEB tree constructed upon initialization
@@ -150,12 +151,10 @@ class Node {
     }
     let newHighBits = this.summary.pred(highBits);
     return (newHighBits << this.bits / 2) + this.cluster[newHighBits].max;
-
-
-
   }
 
-  //returns a bitvector representing existing elements
+  //returns a bitvector representing existing elements by scanning the summary structure
+  //and recursively calling cluster.bitvector
   bitvector (highbits, vector) {
     highbits = highbits || 0;
     vector = vector || new Array(this.size).fill(0);

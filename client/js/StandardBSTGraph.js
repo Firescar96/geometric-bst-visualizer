@@ -8,6 +8,7 @@ const NODE_RADIUS = 10;
 import {ADD_POINT, INSERT_NODE, SET_ROOT, CLEAR_POINTS, REBALANCE} from './constants';
 require('../sass/standardBSTGraph.scss');
 
+//redux reducer to make updates to the standard bst node
 function standardBSTReducer (state, action) {
   if(state === undefined) {
     return {
@@ -61,12 +62,15 @@ function standardBSTReducer (state, action) {
   }
 }
 
+//StandardBSTGraph represents the visualization of the standard bst
 class StandardBSTGraph extends React.Component {
   constructor (props) {
     super(props);
     this.makeGeometricBST = this.makeGeometricBST.bind(this);
     this.selectRebalance = this.selectRebalance.bind(this);
   }
+
+  //converts the standard view into the geometric view
   makeGeometricBST () {
     store.dispatch({type: CLEAR_POINTS});
     let nodes = this.props.accessSequence;
@@ -77,9 +81,12 @@ class StandardBSTGraph extends React.Component {
       if(!node.isAncestor) timestep++;
     });
   }
+
+  //toggles rebalancing for the standard view
   selectRebalance (event) {
     store.dispatch({type: REBALANCE, rebalance: event.target.checked});
   }
+
   render () {
     return (
       <div id="standardBSTGraph">
@@ -108,6 +115,7 @@ class StandardBSTGraph extends React.Component {
   }
 
   componentDidMount () {
+    //enables zooming on the graph
     var zoom = d3.zoom()
       .on('zoom', () => {
         d3.select('#nodes').attr('transform', d3.event.transform);
@@ -119,13 +127,19 @@ class StandardBSTGraph extends React.Component {
 
   componentDidUpdate () {
     if(this.props.root === null)return;
+
+    //for any insert add the satisfierPoints to the geometric view
     this.props.satisfierPoints.forEach(point => {
       store.dispatch({type: ADD_POINT, point});
     });
     let standard = d3.select('#standard');
 
+    //this helper function constructs the links between nodes by walking the tree
+    //using the left and right pointers between them
     let linkChildren = (d) => {
       let linkList = [];
+
+      //use the parent node's position to figure out the position of the children
       if(d == this.props.root) {
         d.x = standard.node().getBoundingClientRect().width / 2;
         d.y = standard.node().getBoundingClientRect().height / 3;
@@ -136,6 +150,7 @@ class StandardBSTGraph extends React.Component {
         d.y = d.parent.y + 50;
       }
 
+      //recurse on the left and right children adding link as we go
       if(d.left !== null) {
         linkList.push({source: d, target: d.left});
         linkList.push(...linkChildren(d.left));
@@ -146,8 +161,9 @@ class StandardBSTGraph extends React.Component {
       }
       return linkList;
     };
-
     let linkList = linkChildren(this.props.root);
+
+    //display the newly constructed links
     let link = standard.select('#links').selectAll('line.link').data(linkList, d => {
       return d.target.id;
     });
@@ -163,6 +179,7 @@ class StandardBSTGraph extends React.Component {
       .attr('opacity', 0);
     link.exit().remove();
 
+    //get all the nodes by doing a traversal of the tree and display them
     let nodes = this.props.root.traversal();
     let node = standard.select('#nodes').selectAll('svg.node')
       .data(nodes, d => d.id);
@@ -208,6 +225,7 @@ class StandardBSTGraph extends React.Component {
 
     node.exit().remove();
 
+    //if a node positions changes smoothly animate it to the new location
     standard.selectAll('svg.node')
       .transition()
       .duration(500)

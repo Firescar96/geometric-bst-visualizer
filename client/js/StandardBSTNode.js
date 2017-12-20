@@ -1,6 +1,7 @@
 import {lessThanComparator} from './main';
 
-//BST balanced by height
+//representation of the Standard View of a Binary Search Tree, when rebalancing is
+//enabled it rebalances to an AVL tree
 class Node {
   constructor (key, parent) {
     this.parent = parent || null;
@@ -37,13 +38,19 @@ class Node {
   //inserts a key and rebalances
   //returns number of new children
   insert (key, rebalance = true, accessSequence = []) {
+    console.log('insert');
+    //the base case is if the touched key is this node's key
     if(key == this.key) {
       this.lastTouched = this;
       accessSequence.push({key: this.key, isAncestor: false});
       return 0;
     }
+
+    //otherwise this is just a satisfier point, a point along the path
     accessSequence.push({key: this.key, isAncestor: true});
 
+    //depending on what the new key is, either insert a left or right child
+    //and update the accessSequence
     if(lessThanComparator(key, this.key)) {
       if(this.left === null) {
         this.numLeftChildren++;
@@ -190,6 +197,7 @@ class Node {
     return elements;
   }
 
+  //getAncestors returns the nodes on the path to the root
   getAncestors () {
     let ancestors = [];
     let curElem = this;
@@ -200,6 +208,7 @@ class Node {
     return ancestors;
   }
 
+  //returns the node in question or null
   find (key) {
     if(key == this.key) {
       return this;

@@ -3143,8 +3143,23 @@ var store = (0, _redux.createStore)((0, _redux.combineReducers)({
 }));
 exports.store = store; //exported here so it's available in all the subcompnents
 
+//sorts numbers and strings in a way that makes sense, instead of the way
+//javascript does it
+
 var lessThanComparator = function lessThanComparator(a, b) {
-  return isNaN(a) && a.localeCompare(b) < 0 || !isNaN(a) && isNaN(b) || a < b;
+  if (!isNaN(a) && isNaN(b)) {
+    //a is a number b is a string
+    return true;
+  } else if (isNaN(a) && !isNaN(b)) {
+    //a is a string b is a number
+    return false;
+  } else if (!isNaN(a) && !isNaN(b)) {
+    //both a and b are numbers
+    return a < b;
+  }
+
+  //both a and b are strings
+  return a.localeCompare(b) < 0;
 };
 exports.lessThanComparator = lessThanComparator;
 
@@ -7648,6 +7663,7 @@ module.exports = canDefineProperty;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+//constants for the rest of the app
 var ADD_POINT = 'ADD POINT';
 var INSERT_NODE = 'INSERT NODE';
 var SET_ROOT = 'SET_ROOT';
@@ -13025,6 +13041,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+//geometricBSTReducer executes operations on the standard BST when triggered via redux
 function geometricBSTReducer(state, action) {
   if (state === undefined) {
     return {
@@ -13053,6 +13070,8 @@ function geometricBSTReducer(state, action) {
   }
 }
 
+//GeometricBSTGraph represents the visualization of the geometric view
+
 var GeometricBSTGraph = function (_React$Component) {
   _inherits(GeometricBSTGraph, _React$Component);
 
@@ -13068,6 +13087,9 @@ var GeometricBSTGraph = function (_React$Component) {
     _this.yRange = null;
     return _this;
   }
+
+  //converts the standard view of the tree into the geometric view
+
 
   _createClass(GeometricBSTGraph, [{
     key: 'makeStandardBst',
@@ -13089,6 +13111,8 @@ var GeometricBSTGraph = function (_React$Component) {
         var accessTime = heap.peek().time;
         var touchedPoints = [];
         var insertedPoint = null;
+
+        //extract from the heap all the points that were touched at the current timestep
         while (heap.peek() !== undefined && heap.peek().time === accessTime) {
           var point = heap.pop();
           if (point.isSatisfier) {
@@ -13104,9 +13128,10 @@ var GeometricBSTGraph = function (_React$Component) {
         var descend = function descend(node) {
           if (node === null) return false;
           parentNode = node;
-          //accessSequence.push({key: node.key, isAncestor: true});
           return true;
         };
+
+        //descends the tree using the satisfier point to find where to insert the new point
         while (isDescending) {
           if (insertedPoint.key == parentNode.key) break;
 
@@ -13126,6 +13151,7 @@ var GeometricBSTGraph = function (_React$Component) {
         }
         sbst.insert(insertedPoint.key, false, accessSequence);
 
+        //look ahead in the tree to figure out whether or not a rotation is needed
         for (var i = 0; i < heap.queue.length; i++) {
 
           if (heap.queue[i].key == parentNode.key) {
@@ -13140,12 +13166,17 @@ var GeometricBSTGraph = function (_React$Component) {
             break;
           }
         }
-        //parentNode.insert(insertedPoint.key, false, accessSequence);
-        //accessSequence.push({key: insertedPoint.key, isAncestor: false});
       }
+
+      //update the attribute of the tree after all the rotations
       sbst.syncAttributes();
+
+      //update the standard view
       _main.store.dispatch({ type: _constants.SET_ROOT, root: sbst, accessSequence: accessSequence });
     }
+
+    //runs the greedy algorithm
+
   }, {
     key: 'runGreedyAlgorithm',
     value: function runGreedyAlgorithm() {
@@ -13190,6 +13221,7 @@ var GeometricBSTGraph = function (_React$Component) {
       var height = geometric.node().getBoundingClientRect().height;
       var heightMargin = height / 5;
 
+      //create a function mapping the domain of point values to the range of the page width
       var xDomainIdxs = points.map(function (x) {
         return String(x.key);
       }).map(function (x, i, a) {
@@ -13202,6 +13234,8 @@ var GeometricBSTGraph = function (_React$Component) {
       .domain(xDomainIdxs.map(function (x) {
         return points[x].key;
       })).padding(1);
+
+      //create a function mapping the domain of point insertion times to the range of the page width
       var yDomain = points.map(function (d) {
         return d.time;
       }).filter(function (x, i, a) {
@@ -13211,18 +13245,36 @@ var GeometricBSTGraph = function (_React$Component) {
       });
       this.yRange = d3.scalePoint().range([heightMargin, height - heightMargin]).domain(yDomain).padding(1);
 
+      //create the axis generators based on these domains
       var xAxis = d3.axisBottom(this.xRange).tickFormat(function (d, i) {
         return points[xDomainIdxs[i]].key;
       });
       var yAxis = d3.axisLeft(this.yRange);
 
+      //display the axis
       geometric.selectAll('g.xAxis').call(xAxis);
-
       geometric.selectAll('g.yAxis').call(yAxis);
 
       var point = geometric.selectAll('circle.point').data(points, function (d) {
         return d.key + ':' + d.time + ':' + d.isSatisfier;
       });
+
+      //helper function to animate points after they are visible
+      var visiblePointHandler = function visiblePointHandler(d) {
+        d.transition().duration(500).ease(function (v) {
+          return d3.easeSinIn(v);
+        }).attr('class', 'point visible').attr('opacity', 1).ease(function (v) {
+          return d3.easeSinIn(v);
+        }).attr('fill', function (d, i) {
+          return d.isSatisfier ? 'red' : d == thisReact.props.root.lastTouched ? 'green' : 'white';
+        }).attr('cx', function (d) {
+          return thisReact.xRange(d.key);
+        }).attr('cy', function (d) {
+          return thisReact.yRange(d.time);
+        });
+      };
+
+      //when a new point is added first insert it invisibly with a delay for when it should appear
       point.enter().append('circle').attr('class', 'point invisible').attr('fill', function (d, i) {
         return d.isSatisfier ? 'red' : d == _this2.props.root.lastTouched ? 'green' : 'white';
       }).attr('cx', function (d) {
@@ -13234,43 +13286,33 @@ var GeometricBSTGraph = function (_React$Component) {
       }).transition().duration(500).delay(function (d) {
         return d.isSatisfier ? 500 * (d.delay + 1) : 0;
       }).on('end', function () {
-        d3.select(this).transition().duration(500).ease(function (v) {
-          return d3.easeSinIn(v);
-        }).attr('class', 'point visible').attr('opacity', 1).ease(function (v) {
-          return d3.easeSinIn(v);
-        }).attr('fill', function (d, i) {
-          return d.isSatisfier ? 'red' : d == thisReact.props.root.lastTouched ? 'green' : 'white';
-        }).attr('cx', function (d) {
-          return thisReact.xRange(d.key);
-        }).attr('cy', function (d) {
-          return thisReact.yRange(d.time);
-        });
+        d3.select(this).call(visiblePointHandler);
       });
       point.exit().remove();
+
+      //keep adjusting the position of invisible point so they appear in the right spot
       geometric.selectAll('circle.point.invisible').attr('cx', function (d) {
         return _this2.xRange(d.key);
       }).attr('cy', function (d) {
         return _this2.yRange(d.time);
       });
-      geometric.selectAll('circle.point.visible').transition().duration(500).ease(function (v) {
-        return d3.easeSinIn(v);
-      }).attr('opacity', 1).attr('fill', function (d, i) {
-        return d.isSatisfier ? 'red' : d == _this2.props.root.lastTouched ? 'green' : 'white';
-      }).attr('cx', function (d) {
-        return _this2.xRange(d.key);
-      }).attr('cy', function (d) {
-        return _this2.yRange(d.time);
-      });
 
+      //visuble points should smoothly transition to their new location when the graph resizes
+      geometric.selectAll('circle.point.visible').call(visiblePointHandler);
+
+      //satisfier rects are displayed in a similar manner as points
       var satisfyRect = geometric.selectAll('rect.satisfier').data(this.satisfierRects);
-      satisfyRect.enter().append('rect').attr('class', 'satisfier invisible').attr('fill', 'none').attr('stroke', 'green').attr('opacity', 0).transition().delay(function (d) {
-        return 500 * d.satisfier.delay;
-      }).attr('opacity', 1).on('end', function () {
-        d3.select(this).attr('class', 'satisfier visible').transition().duration(500).attr('x', function (d) {
+
+      //helper function to animate rects after they are visible
+      var visibleRectHandler = function visibleRectHandler(d) {
+        d.transition().duration(500).attr('x', function (d) {
           return thisReact.xRange(d.base.key);
         }).attr('y', function (d) {
           return thisReact.yRange(d.base.time);
-        }).attr('transform', function (d) {
+        })
+
+        //this tranform is needed to smoothly change the size of the rect even as the graph is moving and shifting around it
+        .attr('transform', function (d) {
           var satisfiedWidth = Math.abs(thisReact.xRange(d.base.key) - thisReact.xRange(d.satisfied.key));
           var satisfiedHeight = Math.abs(thisReact.yRange(d.base.time) - thisReact.yRange(d.satisfied.time));
           if (thisReact.xRange(d.base.key) > thisReact.xRange(d.satisfied.key)) {
@@ -13281,7 +13323,17 @@ var GeometricBSTGraph = function (_React$Component) {
           return Math.abs(thisReact.xRange(d.base.key) - thisReact.xRange(d.satisfied.key));
         }).attr('height', function (d) {
           return Math.abs(thisReact.yRange(d.base.time) - thisReact.yRange(d.satisfied.time));
-        }).transition().delay(500).attr('opacity', 0);
+        })
+        //unlike a point when the rect is done animating it dissapears
+        .transition().delay(500).attr('opacity', 0);
+      };
+
+      satisfyRect.enter().append('rect').attr('class', 'satisfier invisible').attr('fill', 'none').attr('stroke', 'green').attr('opacity', 0).transition().delay(function (d) {
+        return 500 * d.satisfier.delay;
+      }).attr('opacity', 1)
+      //be sure to update the rects after the delay is over
+      .on('end', function () {
+        d3.select(this).attr('class', 'satisfier visible').transition().call(visibleRectHandler);
       });
 
       geometric.selectAll('rect.satisfier.invisible').attr('x', function (d) {
@@ -13290,22 +13342,8 @@ var GeometricBSTGraph = function (_React$Component) {
         return _this2.yRange(d.base.time);
       });
 
-      geometric.selectAll('rect.satisfier.visible').transition().duration(500).attr('x', function (d) {
-        return _this2.xRange(d.base.key);
-      }).attr('y', function (d) {
-        return _this2.yRange(d.base.time);
-      }).attr('transform', function (d) {
-        var satisfiedWidth = Math.abs(_this2.xRange(d.base.key) - _this2.xRange(d.satisfied.key));
-        var satisfiedHeight = Math.abs(_this2.yRange(d.base.time) - _this2.yRange(d.satisfied.time));
-        if (_this2.xRange(d.base.key) > _this2.xRange(d.satisfied.key)) {
-          return 'translate(' + -satisfiedWidth + ',' + -satisfiedHeight + ')';
-        }
-        return 'translate(0,' + -satisfiedHeight + ')';
-      }).attr('width', function (d) {
-        return Math.abs(_this2.xRange(d.base.key) - _this2.xRange(d.satisfied.key));
-      }).attr('height', function (d) {
-        return Math.abs(_this2.yRange(d.base.time) - _this2.yRange(d.satisfied.time));
-      }).transition().delay(500).attr('opacity', 0);
+      //be sure to update the rects on every timestep
+      geometric.selectAll('rect.satisfier.visible').transition().call(visibleRectHandler);
     }
   }, {
     key: 'componentDidMount',
@@ -13316,19 +13354,19 @@ var GeometricBSTGraph = function (_React$Component) {
       var height = geometric.node().getBoundingClientRect().height;
       var heightMargin = height / 5;
 
+      //generate the graph axis
       this.xRange = d3.scalePoint().range([widthMargin, width - widthMargin]);
       this.yRange = d3.scalePoint().range([heightMargin, height - heightMargin]);
       var xAxis = d3.axisBottom(this.xRange);
       var yAxis = d3.axisLeft(this.yRange);
 
       geometric.append('g').attr('class', 'xAxis').attr('transform', 'translate(0,' + (height - heightMargin) + ')').call(xAxis);
-
       geometric.append('g').attr('class', 'yAxis').attr('transform', 'translate(' + widthMargin + ',0)').call(yAxis);
 
       geometric.selectAll('g.xAxis').call(xAxis);
-
       geometric.selectAll('g.yAxis').call(yAxis);
 
+      //generate the axis labels
       var yLabelX = widthMargin - 40;
       var yLabelY = height / 2;
       geometric.append('text').attr('x', yLabelX).attr('y', yLabelY).attr('text-anchor', 'middle').attr('font-size', 20).attr('letter-spacing', 1.5).attr('stroke', 'white').attr('fill', 'white').attr('transform', 'rotate(-90 , ' + yLabelX + ',' + yLabelY + ')').text('insert time');
@@ -13398,6 +13436,7 @@ var NODE_RADIUS = 10;
 
 __webpack_require__(595);
 
+//redux reducer to make updates to the standard bst node
 function standardBSTReducer(state, action) {
   if (state === undefined) {
     return {
@@ -13453,6 +13492,8 @@ function standardBSTReducer(state, action) {
   }
 }
 
+//StandardBSTGraph represents the visualization of the standard bst
+
 var StandardBSTGraph = function (_React$Component) {
   _inherits(StandardBSTGraph, _React$Component);
 
@@ -13466,6 +13507,9 @@ var StandardBSTGraph = function (_React$Component) {
     return _this;
   }
 
+  //converts the standard view into the geometric view
+
+
   _createClass(StandardBSTGraph, [{
     key: 'makeGeometricBST',
     value: function makeGeometricBST() {
@@ -13478,6 +13522,9 @@ var StandardBSTGraph = function (_React$Component) {
         if (!node.isAncestor) timestep++;
       });
     }
+
+    //toggles rebalancing for the standard view
+
   }, {
     key: 'selectRebalance',
     value: function selectRebalance(event) {
@@ -13541,6 +13588,7 @@ var StandardBSTGraph = function (_React$Component) {
   }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
+      //enables zooming on the graph
       var zoom = d3.zoom().on('zoom', function () {
         d3.select('#nodes').attr('transform', d3.event.transform);
         d3.select('#links').attr('transform', d3.event.transform);
@@ -13553,13 +13601,19 @@ var StandardBSTGraph = function (_React$Component) {
       var _this2 = this;
 
       if (this.props.root === null) return;
+
+      //for any insert add the satisfierPoints to the geometric view
       this.props.satisfierPoints.forEach(function (point) {
         _main.store.dispatch({ type: _constants.ADD_POINT, point: point });
       });
       var standard = d3.select('#standard');
 
+      //this helper function constructs the links between nodes by walking the tree
+      //using the left and right pointers between them
       var linkChildren = function linkChildren(d) {
         var linkList = [];
+
+        //use the parent node's position to figure out the position of the children
         if (d == _this2.props.root) {
           d.x = standard.node().getBoundingClientRect().width / 2;
           d.y = standard.node().getBoundingClientRect().height / 3;
@@ -13570,6 +13624,7 @@ var StandardBSTGraph = function (_React$Component) {
           d.y = d.parent.y + 50;
         }
 
+        //recurse on the left and right children adding link as we go
         if (d.left !== null) {
           linkList.push({ source: d, target: d.left });
           linkList.push.apply(linkList, _toConsumableArray(linkChildren(d.left)));
@@ -13580,8 +13635,9 @@ var StandardBSTGraph = function (_React$Component) {
         }
         return linkList;
       };
-
       var linkList = linkChildren(this.props.root);
+
+      //display the newly constructed links
       var link = standard.select('#links').selectAll('line.link').data(linkList, function (d) {
         return d.target.id;
       });
@@ -13596,6 +13652,7 @@ var StandardBSTGraph = function (_React$Component) {
       }).attr('stroke', '#ddd').attr('stroke-width', 5).attr('opacity', 0);
       link.exit().remove();
 
+      //get all the nodes by doing a traversal of the tree and display them
       var nodes = this.props.root.traversal();
       var node = standard.select('#nodes').selectAll('svg.node').data(nodes, function (d) {
         return d.id;
@@ -13622,6 +13679,7 @@ var StandardBSTGraph = function (_React$Component) {
 
       node.exit().remove();
 
+      //if a node positions changes smoothly animate it to the new location
       standard.selectAll('svg.node').transition().duration(500).attr('opacity', 1).attr('x', function (d) {
         return d.x;
       }).attr('y', function (d) {
@@ -13719,6 +13777,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+//Point represents a dot on the Geometric View
 var Point = function Point(key, time) {
   var satisfier = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
@@ -13730,18 +13789,28 @@ var Point = function Point(key, time) {
   this.delay = 0;
 };
 
+//GeometricBST represents all the points in the Geometric View and can run the greedy algorithm
+
+
 var GemetricBST = function () {
   function GemetricBST() {
     _classCallCheck(this, GemetricBST);
 
     this.points = [];
     this.maxTime = 1;
+
     //optimization, if we have already satified points up to this time there is no need to check
     this.maxSatisfiedTime = 1;
+
     //for display purposes need to track how many points created each iteration of greedy algorithm
     this.numIterationSatisfiers = 0;
-    this.lastTouched = null; //needed for d3 to hightlight the most recent point
+
+    //needed for d3 to hightlight the most recent point
+    this.lastTouched = null;
   }
+
+  //allows inserts of Points directly, or create a point from the new element
+
 
   _createClass(GemetricBST, [{
     key: 'insert',
@@ -13763,22 +13832,27 @@ var GemetricBST = function () {
     key: 'runGreedyAlgorithm',
     value: function runGreedyAlgorithm(maxTime) {
       this.numIterationSatisfiers = 0;
+
+      //order the points from first insert to last
       this.points.sort(function (a, b) {
         return a.time < b.time ? -1 : 1;
       });
+
       if (maxTime === undefined) {
         var satisfierRects = [];
+
         //iterate over the points from the bottom up
         for (var time = this.maxSatisfiedTime; time <= this.maxTime; time++) {
           satisfierRects.push.apply(satisfierRects, _toConsumableArray(this.satisfyLevel(time)));
         }
+
         this.maxSatisfiedTime = this.maxTime;
         return satisfierRects;
       }
-      //if(maxTime <= this.maxSatisfiedTime)return [];
-      //this.maxSatisfiedTime = maxTime;
-      //return this.satisfyLevel(maxTime);
     }
+
+    //satisfy the tree for all points up to a particular level (time)
+
   }, {
     key: 'satisfyLevel',
     value: function satisfyLevel(time) {
@@ -13788,12 +13862,12 @@ var GemetricBST = function () {
       var subset = this.points.filter(function (x) {
         return x.time <= time;
       });
+
       //for efficiency precompute the maximum time access for all values
       var maxSubset = {};
+
       //for efficiency precompute all the times that a value was accessed
       var valueSets = {};
-      //for efficiency reasons we only need to compare to a value once, even if it has been
-      //touched in multiple timesteps
       for (var i = subset.length - 1; i >= 0; i--) {
         if (!maxSubset[subset[i].key] || subset[i].time > maxSubset[subset[i].key].time) {
           maxSubset[subset[i].key] = subset[i];
@@ -13804,11 +13878,15 @@ var GemetricBST = function () {
           valueSets[subset[i].key].push(subset[i].time);
         }
       }
+
+      //for efficiency reasons we only need to compare to a value once, even if it has been
+      //touched in multiple timesteps
       maxSubset = Object.keys(maxSubset).map(function (x) {
         return maxSubset[x];
       }).filter(function (x) {
         return x.time < time;
       });
+
       //for the given time get the touched points that need satisfaction and satisfy them
       var agenda = subset.filter(function (x) {
         return x.time == time;
@@ -13818,6 +13896,8 @@ var GemetricBST = function () {
       });
       var satisfiedPoints = [];
 
+      //this is a helperfunction for checking satisfiability along the top and bottom
+      //segments of a box
       var satisfy = function satisfy(unsatisfiedPoint, levelPoint) {
         if (unsatisfiedPoint === null) return;
         //this checks if there are satisfying points along the bottom segment of the
@@ -13834,6 +13914,7 @@ var GemetricBST = function () {
           if (!valueSets[valueSetVal]) continue;
           if (valueSets[valueSetVal].includes(unsatisfiedPoint.time)) return;
         }
+
         //this checks if there are satisfying points along the top segment of the
         //satisfiability box
         var isTopSatisfied = void 0;
@@ -13861,16 +13942,23 @@ var GemetricBST = function () {
         satisfiedPoints.push({ base: unsatisfiedPoint, satisfied: levelPoint, satisfier: satisfier });
       };
 
+      //actually run the greedy algorithm
+
       var _loop = function _loop() {
         var levelPoint = agenda.pop();
+
+        //by definition of max subset there are no points above each point it contains
+        //so we know the points are not satisfied by something they contain
+
         //this checks for satisfiability along the vertical segment below the levelPoint
-        //by definition of max subset there are no points above each of these
-        //so we don't have to check the other vertical segment
         var unsatisfiedPoints = maxSubset.filter(function (x) {
           return !valueSets[levelPoint.key].includes(x.time);
         });
         var minmax = null;
         var maxmin = null;
+
+        //we only need to check if the point directly to the left and directly to the right
+        //of the current level point are satisfied
         for (var unsatIndex = 0; unsatIndex < unsatisfiedPoints.length; unsatIndex++) {
           var unsatPoint = unsatisfiedPoints[unsatIndex];
           if ((0, _main.lessThanComparator)(levelPoint.key, unsatPoint.key) && (minmax === null || (0, _main.lessThanComparator)(unsatPoint.key, minmax.key))) {
@@ -13917,7 +14005,8 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-//BST balanced by height
+//representation of the Standard View of a Binary Search Tree, when rebalancing is
+//enabled it rebalances to an AVL tree
 var Node = function () {
   function Node(key, parent) {
     _classCallCheck(this, Node);
@@ -13966,13 +14055,19 @@ var Node = function () {
       var rebalance = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
       var accessSequence = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
 
+      console.log('insert');
+      //the base case is if the touched key is this node's key
       if (key == this.key) {
         this.lastTouched = this;
         accessSequence.push({ key: this.key, isAncestor: false });
         return 0;
       }
+
+      //otherwise this is just a satisfier point, a point along the path
       accessSequence.push({ key: this.key, isAncestor: true });
 
+      //depending on what the new key is, either insert a left or right child
+      //and update the accessSequence
       if ((0, _main.lessThanComparator)(key, this.key)) {
         if (this.left === null) {
           this.numLeftChildren++;
@@ -14129,6 +14224,9 @@ var Node = function () {
       }
       return elements;
     }
+
+    //getAncestors returns the nodes on the path to the root
+
   }, {
     key: 'getAncestors',
     value: function getAncestors() {
@@ -14140,6 +14238,9 @@ var Node = function () {
       }
       return ancestors;
     }
+
+    //returns the node in question or null
+
   }, {
     key: 'find',
     value: function find(key) {
@@ -23657,6 +23758,8 @@ function sleep(ms) {
   });
 }
 
+//this class displays both views of bst and manages inserts into each of them
+
 var BST = function (_React$Component) {
   _inherits(BST, _React$Component);
 
@@ -23678,6 +23781,9 @@ var BST = function (_React$Component) {
     return _this;
   }
 
+  //calls the appropriate insert functions for each tree
+
+
   _createClass(BST, [{
     key: 'handleInsert',
     value: function handleInsert(newElement) {
@@ -23688,6 +23794,9 @@ var BST = function (_React$Component) {
       }
       _main.store.dispatch({ type: _constants.ADD_POINT, newElement: newElement });
     }
+
+    //called when the user submits the insertion form with a new element
+
   }, {
     key: 'insertElement',
     value: function insertElement(event) {
@@ -23696,11 +23805,17 @@ var BST = function (_React$Component) {
       this.handleInsert(newElement);
       this.setState({ newElement: '' });
     }
+
+    //onChange handler for the insert textbox
+
   }, {
     key: 'changeElement',
     value: function changeElement(event) {
       this.setState({ newElement: event.target.value });
     }
+
+    //selectView toggle handler
+
   }, {
     key: 'selectView',
     value: function selectView(event) {
@@ -23708,6 +23823,9 @@ var BST = function (_React$Component) {
       state[event.target.value] = event.target.checked;
       this.setState(state);
     }
+
+    //automatically inserts an in order traversal 1-5
+
   }, {
     key: 'insertSequence1',
     value: function insertSequence1() {
@@ -23728,6 +23846,9 @@ var BST = function (_React$Component) {
         _this2.runningSequence = false;
       })();
     }
+
+    //automatically inserts the 4-bit bit reversal sequence
+
   }, {
     key: 'insertSequence2',
     value: function insertSequence2() {
@@ -23975,13 +24096,13 @@ var _d = __webpack_require__(132);
 
 var d3 = _interopRequireWildcard(_d);
 
-var _VEBNode = __webpack_require__(302);
+var _VEBNode = __webpack_require__(301);
 
 var _VEBNode2 = _interopRequireDefault(_VEBNode);
 
-var _TreeView = __webpack_require__(301);
+var _XFastNode = __webpack_require__(302);
 
-var _TreeView2 = _interopRequireDefault(_TreeView);
+var _XFastNode2 = _interopRequireDefault(_XFastNode);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -24045,8 +24166,8 @@ var XFastGraph = function (_React$Component) {
       var veb = d3.select('svg#veb');
 
       var bitvector = this.state.root.bitvector();
-      var treeView = new _TreeView2.default(bitvector);
-      var linkList = treeView.getPath(newElement).reverse();
+      var xfast = new _XFastNode2.default(bitvector);
+      var linkList = xfast.getPath(newElement).reverse();
 
       this.setState({ newElement: '' });
     }
@@ -24159,14 +24280,16 @@ var XFastGraph = function (_React$Component) {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
       var veb = d3.select('svg#veb');
-
       var height = veb.node().getBoundingClientRect().height;
       var heightMargin = height / 5;
       var width = veb.node().getBoundingClientRect().width;
 
+      //construct an x-fast tree using the user inserted nodes
       var bitvector = this.state.root.bitvector();
-      var treeView = new _TreeView2.default(bitvector);
-      var bitNodes = treeView.traversal();
+      var xfast = new _XFastNode2.default(bitvector);
+
+      //traverse the x-fast tree and and set the position of each node
+      var bitNodes = xfast.traversal();
       var treeHeight = Math.log2(bitvector.length) - 1;
       bitNodes.forEach(function (node) {
         if (!node.parent) {
@@ -24182,6 +24305,7 @@ var XFastGraph = function (_React$Component) {
         node.y = node.parent.y + ELEMENT_HEIGHT * 3;
       });
 
+      //display all the nodes
       veb.selectAll('svg.node').remove();
       var nodes = veb.select('#nodes').selectAll('svg.node').data(bitNodes);
       var nodeG = nodes.enter().append('svg').attr('class', 'node').attr('x', function (d) {
@@ -24198,6 +24322,8 @@ var XFastGraph = function (_React$Component) {
 
       nodes.exit().remove();
 
+      //helper function to create one type of link for direct child pointers
+      //and another type of link between a node and its descendant leaf
       function linkChildren(parent) {
         var linkList = [];
         if (parent.left !== null) {
@@ -24217,12 +24343,14 @@ var XFastGraph = function (_React$Component) {
         return linkList;
       }
 
-      var linkList = linkChildren(treeView);
+      //display the links
+      var linkList = linkChildren(xfast);
       veb.selectAll('path.link').remove();
       var links = veb.select('#links').selectAll('path.link').data(linkList, function (d) {
         return d.target.id;
       });
 
+      //helper function to draw an arc to leaves
       function drawPath(context, radius) {
         context.moveTo(radius, 0);
         context.arc(0, 0, radius, 0, 2 * Math.PI);
@@ -24249,6 +24377,8 @@ var XFastGraph = function (_React$Component) {
       });
       links.exit().remove();
 
+      //underneath the graph it's helpful to display the actual number each sequence of
+      //bits represents
       var leafNodes = bitNodes.filter(function (d) {
         return d.isLeaf;
       });
@@ -24377,23 +24507,34 @@ var MinHeap = function () {
     window.heap = this;
   }
 
+  //returns true if the heap isn't empty
+
+
   _createClass(MinHeap, [{
     key: 'hasNext',
     value: function hasNext() {
       return this.queue.length > 0;
     }
+
+    //inserts a new value into the queue and rebalances
+
   }, {
     key: 'insert',
     value: function insert(value) {
       this.queue.push(value);
       this.bubbleUp(this.queue.length - 1);
-      //if(this.queue.length > 1 && )
     }
+
+    //peek at the next element in the heap
+
   }, {
     key: 'peek',
     value: function peek() {
       return this.queue[0];
     }
+
+    //retrieve the next element in the heap and rebalance
+
   }, {
     key: 'pop',
     value: function pop() {
@@ -24404,6 +24545,9 @@ var MinHeap = function () {
       this._fixHeap(0);
       return oldRoot;
     }
+
+    //bubbleup fixes the heap by rearraging items from the bottom up
+
   }, {
     key: 'bubbleUp',
     value: function bubbleUp(index) {
@@ -24418,6 +24562,9 @@ var MinHeap = function () {
         return;
       }
     }
+
+    //compares the elements at an index's right and left children and swaps if necessary
+
   }, {
     key: '_fixHeap',
     value: function _fixHeap(value) {
@@ -24433,6 +24580,9 @@ var MinHeap = function () {
         this._fixHeap(right);
       }
     }
+
+    //performs the swap
+
   }, {
     key: 'swap',
     value: function swap(self, target) {
@@ -24440,6 +24590,9 @@ var MinHeap = function () {
       this.queue[self] = this.queue[target];
       this.queue[target] = placeHolder;
     }
+
+    //uses the specified criteria key to compare two values
+
   }, {
     key: 'evaluate',
     value: function evaluate(self, target) {
@@ -24448,6 +24601,9 @@ var MinHeap = function () {
       }
       return (0, _main.lessThanComparator)(this.queue[self][this.criteria], this.queue[target][this.criteria]);
     }
+
+    //helper functions to do math
+
   }, {
     key: 'getParentIndex',
     value: function getParentIndex(index) {
@@ -24477,110 +24633,11 @@ exports.default = MinHeap;
 "use strict";
 
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Node = function () {
-  function Node(bitvector, id, prefix) {
-    _classCallCheck(this, Node);
-
-    this.prefix = prefix || 0;
-    this.bitvector = bitvector;
-    console.log(this.bitvector);
-    this.id = id || '0';
-    this.left = this.right = null;
-    this.leftDescendant = this.rightDescendant = null;
-
-    if (bitvector.length == 1) {
-      this.isLeaf = true;
-    } else {
-      var leftVector = bitvector.slice(0, bitvector.length / 2);
-      var rightVector = bitvector.slice(bitvector.length / 2);
-      if (leftVector.includes(1)) {
-        this.left = new Node(leftVector, this.id + '0', this.prefix);
-        this.left.parent = this;
-      }
-      if (rightVector.includes(1)) {
-        this.right = new Node(rightVector, this.id + '1', this.prefix + this.bitvector.length / 2);
-        this.right.parent = this;
-      }
-      if (!this.left && this.right) this.leftDescendant = this.right.getLeftmostChild();
-      if (!this.right && this.left) this.rightDescendant = this.left.getRightmostChild();
-    }
-  }
-
-  _createClass(Node, [{
-    key: 'traversal',
-    value: function traversal() {
-      var elements = [];
-      elements.push(this);
-      if (this.left !== null) elements.push.apply(elements, _toConsumableArray(this.left.traversal()));
-      if (this.right !== null) elements.push.apply(elements, _toConsumableArray(this.right.traversal()));
-
-      return elements;
-    }
-  }, {
-    key: 'getPath',
-    value: function getPath(value) {
-      var bits = this.bitvector.length;
-      if (bits > 1) {
-        var lowBits = value & bits / 2 - 1;
-        if (value < bits / 2) {
-          return this.left.getPath(lowBits);
-        }
-        return this.right.getPath(lowBits);
-      }
-
-      var ancestors = [];
-      var curElem = this;
-      while (curElem.parent !== undefined) {
-        ancestors.push({ source: curElem.parent, target: curElem });
-        curElem = curElem.parent;
-      }
-      return ancestors;
-    }
-  }, {
-    key: 'getLeftmostChild',
-    value: function getLeftmostChild() {
-      if (this.bitvector.length == 1) return this;
-      if (this.left) return this.left.getLeftmostChild();
-      return this.leftDescendant;
-    }
-  }, {
-    key: 'getRightmostChild',
-    value: function getRightmostChild() {
-      if (this.bitvector.length == 1) return this;
-      if (this.right) return this.right.getRightmostChild();
-      return this.rightDescendant;
-    }
-  }, {
-    key: 'getValue',
-    value: function getValue() {}
-  }]);
-
-  return Node;
-}();
-
-exports.default = Node;
-
-/***/ }),
-/* 302 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+//An implementation of a vEB tree
 var Node = function () {
   function Node(bits) {
     _classCallCheck(this, Node);
@@ -24750,7 +24807,8 @@ var Node = function () {
       return (newHighBits << this.bits / 2) + this.cluster[newHighBits].max;
     }
 
-    //returns a bitvector representing existing elements
+    //returns a bitvector representing existing elements by scanning the summary structure
+    //and recursively calling cluster.bitvector
 
   }, {
     key: 'bitvector',
@@ -24775,6 +24833,120 @@ var Node = function () {
 }();
 
 module.exports = Node;
+
+/***/ }),
+/* 302 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+//Tree View of a vEB tree, specificallly an x-fast tree which doesn't store missing values
+var Node = function () {
+  function Node(bitvector, id, prefix) {
+    _classCallCheck(this, Node);
+
+    //prefix is a value sent from the parent that should be added when this node displays it's value
+    this.prefix = prefix || 0;
+    this.bitvector = bitvector; //the bits this node represents
+    this.id = id || '0';
+
+    //the normal left and right children of a tree`
+    this.left = this.right = null;
+
+    //if the tree has no direct left or right child these point to the appropriate leaf on each side of the tree
+    this.leftDescendant = this.rightDescendant = null;
+
+    if (bitvector.length == 1) {
+      this.isLeaf = true;
+    } else {
+      var leftVector = bitvector.slice(0, bitvector.length / 2);
+      var rightVector = bitvector.slice(bitvector.length / 2);
+      if (leftVector.includes(1)) {
+        this.left = new Node(leftVector, this.id + '0', this.prefix);
+        this.left.parent = this;
+      }
+      if (rightVector.includes(1)) {
+        this.right = new Node(rightVector, this.id + '1', this.prefix + this.bitvector.length / 2);
+        this.right.parent = this;
+      }
+      if (!this.left && this.right) this.leftDescendant = this.right.getLeftmostChild();
+      if (!this.right && this.left) this.rightDescendant = this.left.getRightmostChild();
+    }
+  }
+
+  //traverses the tree from the top down to get every element
+
+
+  _createClass(Node, [{
+    key: 'traversal',
+    value: function traversal() {
+      var elements = [];
+      elements.push(this);
+      if (this.left !== null) elements.push.apply(elements, _toConsumableArray(this.left.traversal()));
+      if (this.right !== null) elements.push.apply(elements, _toConsumableArray(this.right.traversal()));
+
+      return elements;
+    }
+
+    //returns the path from the value in question at the leaf of the tree up to the root
+
+  }, {
+    key: 'getPath',
+    value: function getPath(value) {
+      var bits = this.bitvector.length;
+      if (bits > 1) {
+        var lowBits = value & bits / 2 - 1;
+        if (value < bits / 2) {
+          return this.left.getPath(lowBits);
+        }
+        return this.right.getPath(lowBits);
+      }
+
+      var ancestors = [];
+      var curElem = this;
+      while (curElem.parent !== undefined) {
+        ancestors.push({ source: curElem.parent, target: curElem });
+        curElem = curElem.parent;
+      }
+      return ancestors;
+    }
+
+    //gets the leaf representing this nodes leftmost child
+
+  }, {
+    key: 'getLeftmostChild',
+    value: function getLeftmostChild() {
+      if (this.bitvector.length == 1) return this;
+      if (this.left) return this.left.getLeftmostChild();
+      return this.leftDescendant;
+    }
+
+    //gets the leaf representing this nodes rightmost child
+
+  }, {
+    key: 'getRightmostChild',
+    value: function getRightmostChild() {
+      if (this.bitvector.length == 1) return this;
+      if (this.right) return this.right.getRightmostChild();
+      return this.rightDescendant;
+    }
+  }]);
+
+  return Node;
+}();
+
+exports.default = Node;
 
 /***/ }),
 /* 303 */

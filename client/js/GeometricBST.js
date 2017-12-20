@@ -1,5 +1,6 @@
 import {lessThanComparator} from './main';
 
+//Point represents a dot on the Geometric View
 class Point {
   constructor (key, time, satisfier = false) {
     this.key = key;
@@ -9,17 +10,23 @@ class Point {
   }
 }
 
+//GeometricBST represents all the points in the Geometric View and can run the greedy algorithm
 class GemetricBST {
   constructor () {
     this.points = [];
     this.maxTime = 1;
+
     //optimization, if we have already satified points up to this time there is no need to check
     this.maxSatisfiedTime = 1;
+
     //for display purposes need to track how many points created each iteration of greedy algorithm
     this.numIterationSatisfiers = 0;
-    this.lastTouched = null; //needed for d3 to hightlight the most recent point
+
+    //needed for d3 to hightlight the most recent point
+    this.lastTouched = null;
   }
 
+  //allows inserts of Points directly, or create a point from the new element
   insert (key) {
     if(key instanceof Point) {
       this.points.push(key);
@@ -35,31 +42,33 @@ class GemetricBST {
   //takes an optional parameter for what subset of times (0 - maxTime) to look at
   runGreedyAlgorithm (maxTime) {
     this.numIterationSatisfiers = 0;
+
+    //order the points from first insert to last
     this.points.sort((a, b) => a.time < b.time ? -1 : 1);
+
     if(maxTime === undefined) {
       let satisfierRects = [];
+
       //iterate over the points from the bottom up
       for(var time = this.maxSatisfiedTime; time <= this.maxTime; time++) {
         satisfierRects.push(...this.satisfyLevel(time));
       }
+
       this.maxSatisfiedTime = this.maxTime;
       return satisfierRects;
     }
-    //if(maxTime <= this.maxSatisfiedTime)return [];
-    //this.maxSatisfiedTime = maxTime;
-    //return this.satisfyLevel(maxTime);
-
   }
 
+  //satisfy the tree for all points up to a particular level (time)
   satisfyLevel (time) {
     //get the points that have to be checked for satisfiability
     let subset = this.points.filter(x => x.time <= time);
+
     //for efficiency precompute the maximum time access for all values
     let maxSubset = {};
+
     //for efficiency precompute all the times that a value was accessed
     let valueSets = {};
-    //for efficiency reasons we only need to compare to a value once, even if it has been
-    //touched in multiple timesteps
     for(var i = subset.length - 1; i >= 0; i--) {
       if(!maxSubset[subset[i].key] || (subset[i].time > maxSubset[subset[i].key].time)) {
         maxSubset[subset[i].key] = subset[i];
@@ -70,12 +79,18 @@ class GemetricBST {
         valueSets[subset[i].key].push(subset[i].time);
       }
     }
+
+    //for efficiency reasons we only need to compare to a value once, even if it has been
+    //touched in multiple timesteps
     maxSubset = Object.keys(maxSubset).map(x => maxSubset[x]).filter(x => x.time < time);
+
     //for the given time get the touched points that need satisfaction and satisfy them
     let agenda = subset.filter(x => x.time == time);
     let levelValues = agenda.map(x => x.key);
     let satisfiedPoints = [];
 
+    //this is a helperfunction for checking satisfiability along the top and bottom
+    //segments of a box
     let satisfy = (unsatisfiedPoint, levelPoint) => {
       if(unsatisfiedPoint === null)return;
       //this checks if there are satisfying points along the bottom segment of the
@@ -92,6 +107,7 @@ class GemetricBST {
         if(!valueSets[valueSetVal])continue;
         if(valueSets[valueSetVal].includes(unsatisfiedPoint.time))return;
       }
+
       //this checks if there are satisfying points along the top segment of the
       //satisfiability box
       let isTopSatisfied;
@@ -113,14 +129,20 @@ class GemetricBST {
       satisfiedPoints.push({base: unsatisfiedPoint, satisfied: levelPoint, satisfier: satisfier});
     };
 
+    //actually run the greedy algorithm
     while(agenda.length > 0) {
       let levelPoint = agenda.pop();
+
+      //by definition of max subset there are no points above each point it contains
+      //so we know the points are not satisfied by something they contain
+
       //this checks for satisfiability along the vertical segment below the levelPoint
-      //by definition of max subset there are no points above each of these
-      //so we don't have to check the other vertical segment
       let unsatisfiedPoints = maxSubset.filter(x => !valueSets[levelPoint.key].includes(x.time));
       let minmax = null;
       let maxmin = null;
+
+      //we only need to check if the point directly to the left and directly to the right
+      //of the current level point are satisfied
       for(let unsatIndex = 0; unsatIndex < unsatisfiedPoints.length; unsatIndex++) {
         let unsatPoint = unsatisfiedPoints[unsatIndex];
         if(lessThanComparator(levelPoint.key, unsatPoint.key) &&

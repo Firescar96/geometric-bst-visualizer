@@ -10,6 +10,7 @@ function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+//this class displays both views of bst and manages inserts into each of them
 class BST extends React.Component {
   constructor () {
     super();
@@ -24,6 +25,8 @@ class BST extends React.Component {
     this.insertSequence2 = this.insertSequence2.bind(this);
     this.runningSequence = false;
   }
+
+  //calls the appropriate insert functions for each tree
   handleInsert (newElement) {
     if(newElement === '')return;
     newElement = isNaN(newElement) ? newElement : parseFloat(newElement);
@@ -32,20 +35,28 @@ class BST extends React.Component {
     }
     store.dispatch({ type: ADD_POINT, newElement });
   }
+
+  //called when the user submits the insertion form with a new element
   insertElement (event) {
     event.preventDefault();
     let newElement = this.state.newElement;
     this.handleInsert(newElement);
     this.setState({newElement: ''});
   }
+
+  //onChange handler for the insert textbox
   changeElement (event) {
     this.setState({newElement: event.target.value});
   }
+
+  //selectView toggle handler
   selectView (event) {
     let state = this.state;
     state[event.target.value] =  event.target.checked;
     this.setState(state);
   }
+
+  //automatically inserts an in order traversal 1-5
   insertSequence1 () {
     if(this.runningSequence) return;
     this.runningSequence = true;
@@ -62,6 +73,8 @@ class BST extends React.Component {
     this.runningSequence = false;
   })()
   }
+
+  //automatically inserts the 4-bit bit reversal sequence
   insertSequence2 () {
     if(this.runningSequence) return;
     this.runningSequence = true;

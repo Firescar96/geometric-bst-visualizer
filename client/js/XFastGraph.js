@@ -1,7 +1,7 @@
 import React from 'react';
 import *as d3 from 'd3';
 import VEBNode from './VEBNode';
-import TreeView from './TreeView';
+import XFastNode from './XFastNode';
 const ELEMENT_WIDTH = 30;
 const ELEMENT_HEIGHT = 20;
 require('../sass/xfast.scss');
@@ -41,8 +41,8 @@ class XFastGraph extends React.Component {
     let veb = d3.select('svg#veb');
 
     let bitvector = this.state.root.bitvector();
-    let treeView = new TreeView(bitvector);
-    let linkList = treeView.getPath(newElement).reverse();
+    let xfast = new XFastNode(bitvector);
+    let linkList = xfast.getPath(newElement).reverse();
 
     this.setState({newElement: ''});
   }
@@ -101,14 +101,16 @@ class XFastGraph extends React.Component {
 
   componentDidUpdate () {
     let veb = d3.select('svg#veb');
-
     let height = veb.node().getBoundingClientRect().height;
     let heightMargin = height / 5;
     let width = veb.node().getBoundingClientRect().width;
 
+    //construct an x-fast tree using the user inserted nodes
     let bitvector = this.state.root.bitvector();
-    let treeView = new TreeView(bitvector);
-    let bitNodes = treeView.traversal();
+    let xfast = new XFastNode(bitvector);
+
+    //traverse the x-fast tree and and set the position of each node
+    let bitNodes = xfast.traversal();
     let treeHeight = Math.log2(bitvector.length) - 1;
     bitNodes.forEach(node => {
       if(!node.parent) {
@@ -124,6 +126,7 @@ class XFastGraph extends React.Component {
       node.y = node.parent.y + ELEMENT_HEIGHT * 3;
     });
 
+    //display all the nodes
     veb.selectAll('svg.node').remove();
     let nodes = veb.select('#nodes').selectAll('svg.node')
       .data(bitNodes);
@@ -155,6 +158,8 @@ class XFastGraph extends React.Component {
 
     nodes.exit().remove();
 
+    //helper function to create one type of link for direct child pointers
+    //and another type of link between a node and its descendant leaf
     function linkChildren (parent) {
       let linkList = [];
       if(parent.left !== null) {
@@ -174,10 +179,12 @@ class XFastGraph extends React.Component {
       return linkList;
     }
 
-    let linkList = linkChildren(treeView);
+    //display the links
+    let linkList = linkChildren(xfast);
     veb.selectAll('path.link').remove();
     let links = veb.select('#links').selectAll('path.link').data(linkList, d => d.target.id);
 
+    //helper function to draw an arc to leaves
     function drawPath (context, radius) {
       context.moveTo(radius, 0);
       context.arc(0, 0, radius, 0, 2 * Math.PI);
@@ -207,6 +214,8 @@ class XFastGraph extends React.Component {
       });
     links.exit().remove();
 
+    //underneath the graph it's helpful to display the actual number each sequence of
+    //bits represents
     let leafNodes = bitNodes.filter(d => d.isLeaf);
     veb.selectAll('svg.value').remove();
     let values = veb.select('#values').selectAll('svg.value').data(leafNodes);

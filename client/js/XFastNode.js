@@ -1,10 +1,15 @@
+//Tree View of a vEB tree, specificallly an x-fast tree which doesn't store missing values
 class Node {
   constructor (bitvector, id, prefix) {
+    //prefix is a value sent from the parent that should be added when this node displays it's value
     this.prefix = prefix || 0;
-    this.bitvector = bitvector;
-    console.log(this.bitvector);
+    this.bitvector = bitvector; //the bits this node represents
     this.id = id || '0';
+
+    //the normal left and right children of a tree`
     this.left = this.right = null;
+
+    //if the tree has no direct left or right child these point to the appropriate leaf on each side of the tree
     this.leftDescendant = this.rightDescendant = null;
 
     if(bitvector.length == 1) {
@@ -24,6 +29,8 @@ class Node {
       if(!this.right && this.left)this.rightDescendant = this.left.getRightmostChild();
     }
   }
+
+  //traverses the tree from the top down to get every element
   traversal () {
     var elements = [];
     elements.push(this);
@@ -33,6 +40,7 @@ class Node {
     return elements;
   }
 
+  //returns the path from the value in question at the leaf of the tree up to the root
   getPath (value) {
     let bits = this.bitvector.length;
     if(bits > 1) {
@@ -53,20 +61,18 @@ class Node {
 
   }
 
+  //gets the leaf representing this nodes leftmost child
   getLeftmostChild () {
     if(this.bitvector.length == 1)return this;
     if(this.left)return this.left.getLeftmostChild();
     return this.leftDescendant;
   }
 
+  //gets the leaf representing this nodes rightmost child
   getRightmostChild () {
     if(this.bitvector.length == 1)return this;
     if(this.right)return this.right.getRightmostChild();
     return this.rightDescendant;
-  }
-
-  getValue () {
-
   }
 }
 
