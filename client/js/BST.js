@@ -4,7 +4,7 @@ import StandardBSTGraph from './StandardBSTGraph.js';
 import GeometricBSTGraph from './GeometricBSTGraph.js';
 import {store} from './main.js';
 require('../sass/bst.scss');
-import {INSERT_NODE, ADD_POINT} from './constants';
+import {INSERT_NODE, ADD_POINT, SET_ROOT, CLEAR_POINTS} from './constants';
 
 function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -23,6 +23,7 @@ class BST extends React.Component {
     this.selectView = this.selectView.bind(this);
     this.insertSequence1 = this.insertSequence1.bind(this);
     this.insertSequence2 = this.insertSequence2.bind(this);
+    this.clear = this.clear.bind(this);
     this.runningSequence = false;
   }
 
@@ -61,17 +62,17 @@ class BST extends React.Component {
     if(this.runningSequence) return;
     this.runningSequence = true;
     (async () => {
-    this.handleInsert(1);
-    await sleep(1000)
-    this.handleInsert(2);
-    await sleep(1000)
-    this.handleInsert(3);
-    await sleep(1000)
-    this.handleInsert(4);
-    await sleep(1000)
-    this.handleInsert(5);
-    this.runningSequence = false;
-  })()
+      this.handleInsert(1);
+      await sleep(1000)
+      this.handleInsert(2);
+      await sleep(1000)
+      this.handleInsert(3);
+      await sleep(1000)
+      this.handleInsert(4);
+      await sleep(1000)
+      this.handleInsert(5);
+      this.runningSequence = false;
+    })()
   }
 
   //automatically inserts the 4-bit bit reversal sequence
@@ -79,40 +80,48 @@ class BST extends React.Component {
     if(this.runningSequence) return;
     this.runningSequence = true;
     (async () => {
-    this.handleInsert(0);
-    await sleep(1000)
-    this.handleInsert(8);
-    await sleep(1000)
-    this.handleInsert(4);
-    await sleep(1000)
-    this.handleInsert(12);
-    await sleep(1000)
-    this.handleInsert(2);
-    await sleep(1000)
-    this.handleInsert(10);
-    await sleep(1000)
-    this.handleInsert(6);
-    await sleep(1000)
-    this.handleInsert(14);
-    await sleep(1000)
-    this.handleInsert(1);
-    await sleep(1000)
-    this.handleInsert(9);
-    await sleep(1000)
-    this.handleInsert(5);
-    await sleep(1000)
-    this.handleInsert(13);
-    await sleep(1000)
-    this.handleInsert(3);
-    await sleep(1000)
-    this.handleInsert(11);
-    await sleep(1000)
-    this.handleInsert(7);
-    await sleep(1000)
-    this.handleInsert(15);
-    this.runningSequence = false;
-  })()
+      this.handleInsert(0);
+      await sleep(1000)
+      this.handleInsert(8);
+      await sleep(1000)
+      this.handleInsert(4);
+      await sleep(1000)
+      this.handleInsert(12);
+      await sleep(1000)
+      this.handleInsert(2);
+      await sleep(1000)
+      this.handleInsert(10);
+      await sleep(1000)
+      this.handleInsert(6);
+      await sleep(1000)
+      this.handleInsert(14);
+      await sleep(1000)
+      this.handleInsert(1);
+      await sleep(1000)
+      this.handleInsert(9);
+      await sleep(1000)
+      this.handleInsert(5);
+      await sleep(1000)
+      this.handleInsert(13);
+      await sleep(1000)
+      this.handleInsert(3);
+      await sleep(1000)
+      this.handleInsert(11);
+      await sleep(1000)
+      this.handleInsert(7);
+      await sleep(1000)
+      this.handleInsert(15);
+      this.runningSequence = false;
+    })()
   }
+
+  //clears all points
+  clear () {
+    store.dispatch({ type: SET_ROOT, root: null, accessSequence: []});
+    store.dispatch({ type: CLEAR_POINTS });
+    this.setState({newElement: ''});
+  }
+
   render () {
     return (
       <main id="bst">
@@ -129,6 +138,7 @@ class BST extends React.Component {
           <button id="insert" type="submit">Insert</button>
           <button id="sequence1" onClick={this.insertSequence1}>Sequence 1</button>
           <button id="sequence2" onClick={this.insertSequence2}>Sequence 2</button>
+          <button id="clear" onClick={this.clear}>CLEAR</button>
         </form>
         <div id="inserts">
           <p>Enable Standard View Inserts</p>

@@ -13600,13 +13600,16 @@ var StandardBSTGraph = function (_React$Component) {
     value: function componentDidUpdate() {
       var _this2 = this;
 
-      if (this.props.root === null) return;
+      var standard = d3.select('#standard');
+      if (this.props.root === null) {
+        standard.selectAll('.node, .link').remove();
+        return;
+      }
 
       //for any insert add the satisfierPoints to the geometric view
       this.props.satisfierPoints.forEach(function (point) {
         _main.store.dispatch({ type: _constants.ADD_POINT, point: point });
       });
-      var standard = d3.select('#standard');
 
       //this helper function constructs the links between nodes by walking the tree
       //using the left and right pointers between them
@@ -23777,6 +23780,7 @@ var BST = function (_React$Component) {
     _this.selectView = _this.selectView.bind(_this);
     _this.insertSequence1 = _this.insertSequence1.bind(_this);
     _this.insertSequence2 = _this.insertSequence2.bind(_this);
+    _this.clear = _this.clear.bind(_this);
     _this.runningSequence = false;
     return _this;
   }
@@ -23891,6 +23895,16 @@ var BST = function (_React$Component) {
         _this3.runningSequence = false;
       })();
     }
+
+    //clears all points
+
+  }, {
+    key: 'clear',
+    value: function clear() {
+      _main.store.dispatch({ type: _constants.SET_ROOT, root: null, accessSequence: [] });
+      _main.store.dispatch({ type: _constants.CLEAR_POINTS });
+      this.setState({ newElement: '' });
+    }
   }, {
     key: 'render',
     value: function render() {
@@ -23947,6 +23961,11 @@ var BST = function (_React$Component) {
             'button',
             { id: 'sequence2', onClick: this.insertSequence2 },
             'Sequence 2'
+          ),
+          _react2.default.createElement(
+            'button',
+            { id: 'clear', onClick: this.clear },
+            'CLEAR'
           )
         ),
         _react2.default.createElement(
@@ -24144,6 +24163,7 @@ var XFastGraph = function (_React$Component) {
     _this.changeElement = _this.changeElement.bind(_this);
     _this.doubleBits = _this.doubleBits.bind(_this);
     _this.halveBits = _this.halveBits.bind(_this);
+    _this.initializeD3Graph = _this.initializeD3Graph.bind(_this);
     return _this;
   }
 
@@ -24265,15 +24285,56 @@ var XFastGraph = function (_React$Component) {
         )
       );
     }
+
+    //when the graph is resized this function recenters the view on the tree
+
+  }, {
+    key: 'initializeD3Graph',
+    value: function initializeD3Graph() {
+      var _d3$zoomTransform;
+
+      var veb = d3.select('svg#veb');
+      var parent = veb.node().getBoundingClientRect();
+      var width = ELEMENT_WIDTH * Math.pow(2, this.state.root.bits + 1);
+      var height = 2 * ELEMENT_HEIGHT * (this.state.root.bits + 1);
+      var midX = parent.width / 2;
+      var midY = parent.height / 2;
+
+      if (width == 0 || height == 0) return; //nothing to fit
+
+      //compute the scale to fit everything, with a bit of leeway
+      var scale = 0.85 / Math.max(width / parent.width, height / parent.height);
+      var translate = [fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY];
+
+      var transform = (_d3$zoomTransform = d3.zoomTransform(veb)).translate.apply(_d3$zoomTransform, translate).scale(scale).toString();
+
+      d3.select('#nodes').attr('transform', transform);
+      d3.select('#links').attr('transform', transform);
+      d3.select('#values').attr('transform', transform);
+
+      //reset the zoom handler to account for this scaling when the user scolls/pans
+      veb.on('.zoom', null);
+      var zoom = d3.zoom().on('zoom', function (d) {
+        var _d3$event$transform;
+
+        var updatedtransform = (_d3$event$transform = d3.event.transform).translate.apply(_d3$event$transform, translate).scale(scale);
+        d3.select('#nodes').attr('transform', updatedtransform);
+        d3.select('#links').attr('transform', updatedtransform);
+        d3.select('#values').attr('transform', updatedtransform);
+      });
+      veb.call(zoom);
+    }
   }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
-      var zoom = d3.zoom().on('zoom', function () {
+      var veb = d3.select('svg#veb');
+      var zoom = d3.zoom().on('zoom', function (d) {
+        console.log(d3.event.transform);
         d3.select('#nodes').attr('transform', d3.event.transform);
         d3.select('#links').attr('transform', d3.event.transform);
         d3.select('#values').attr('transform', d3.event.transform);
       });
-      var veb = d3.select('svg#veb').call(zoom);
+      veb.call(zoom);
       this.componentDidUpdate();
     }
   }, {

@@ -23,6 +23,7 @@ class XFastGraph extends React.Component {
     this.changeElement = this.changeElement.bind(this);
     this.doubleBits = this.doubleBits.bind(this);
     this.halveBits = this.halveBits.bind(this);
+    this.initializeD3Graph = this.initializeD3Graph.bind(this);
   }
 
   changeElement (event) {
@@ -87,15 +88,49 @@ class XFastGraph extends React.Component {
     );
   }
 
+  //when the graph is resized this function recenters the view on the tree
+  initializeD3Graph () {
+    let veb = d3.select('svg#veb');
+    let parent = veb.node().getBoundingClientRect();
+    var width = ELEMENT_WIDTH * Math.pow(2, this.state.root.bits + 1);
+    var height = 2 * ELEMENT_HEIGHT * (this.state.root.bits + 1);
+    var midX = parent.width / 2;
+    var midY = parent.height / 2;
+
+    if(width == 0 || height == 0)return; //nothing to fit
+
+    //compute the scale to fit everything, with a bit of leeway
+    var scale = 0.85 / Math.max(width / parent.width, height / parent.height);
+    var translate = [fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY];
+
+    let transform = d3.zoomTransform(veb).translate(...translate).scale(scale).toString();
+
+    d3.select('#nodes').attr('transform', transform);
+    d3.select('#links').attr('transform', transform);
+    d3.select('#values').attr('transform', transform);
+
+    //reset the zoom handler to account for this scaling when the user scolls/pans
+    veb.on('.zoom', null);
+    let zoom = d3.zoom()
+      .on('zoom', d => {
+        let updatedtransform = d3.event.transform.translate(...translate).scale(scale);
+        d3.select('#nodes').attr('transform', updatedtransform);
+        d3.select('#links').attr('transform', updatedtransform);
+        d3.select('#values').attr('transform', updatedtransform);
+      });
+    veb.call(zoom);
+  }
+
   componentDidMount () {
-    var zoom = d3.zoom()
-      .on('zoom', () => {
+    let veb = d3.select('svg#veb');
+    let zoom = d3.zoom()
+      .on('zoom', d => {
+        console.log(d3.event.transform);
         d3.select('#nodes').attr('transform', d3.event.transform);
         d3.select('#links').attr('transform', d3.event.transform);
         d3.select('#values').attr('transform', d3.event.transform);
       });
-    let veb = d3.select('svg#veb')
-      .call(zoom);
+    veb.call(zoom);
     this.componentDidUpdate();
   }
 

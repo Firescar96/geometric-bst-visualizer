@@ -126,13 +126,16 @@ class StandardBSTGraph extends React.Component {
   }
 
   componentDidUpdate () {
-    if(this.props.root === null)return;
+    let standard = d3.select('#standard');
+    if(this.props.root === null) {
+      standard.selectAll('.node, .link').remove();
+      return;
+    }
 
     //for any insert add the satisfierPoints to the geometric view
     this.props.satisfierPoints.forEach(point => {
       store.dispatch({type: ADD_POINT, point});
     });
-    let standard = d3.select('#standard');
 
     //this helper function constructs the links between nodes by walking the tree
     //using the left and right pointers between them
