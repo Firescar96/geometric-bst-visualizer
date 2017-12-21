@@ -11,7 +11,7 @@ class Point {
 }
 
 //GeometricBST represents all the points in the Geometric View and can run the greedy algorithm
-class GemetricBST {
+class GeometricBST {
   constructor () {
     this.points = [];
     this.maxTime = 1;
@@ -163,4 +163,4 @@ class GemetricBST {
 }
 
 export {Point};
-export default GemetricBST;
+export default GeometricBST;
